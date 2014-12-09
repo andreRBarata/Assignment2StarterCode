@@ -8,49 +8,13 @@ class Shape {
 	Shape(PVector[][] shape) {
 		this.shape = shape;
 	}
-	
-	int size() {
-		return shape.length;
-	}
-	
-	PVector[] get(int i) {
-		return shape[i];
-	}
-	
-	float maxWidth() {
-		float maxWidth = 0;
-		for (int i = 0; i < shape.length; i++) {
-			if (i == 0 || shape[i][0].x > maxWidth) {
-				maxWidth = shape[i][0].x;
-			}
-			if (i == 0 || shape[i][1].x > maxWidth) {
-				maxWidth = shape[i][1].x;
-			}
-		}
-		
-		return maxWidth;
-	}
-	
-	float maxHeight() {
-		float maxHeight = 0;
-		for (int i = 0; i < shape.length; i++) {
-			if (i == 0 || shape[i][0].y > maxHeight) {
-				maxHeight = shape[i][0].y;
-			}
-			if (i == 0 || shape[i][1].y > maxHeight) {
-				maxHeight = shape[i][1].y;
-			}
-		}
-		
-		return maxHeight;
-	}
 }
 
 class Drawable {
 	PVector position;
 	Shape shape;
 	
-	Drawable(PVector position, PVector[][] shape) {
+	Drawable(PVector position, PShape shape) {
 		this.position = position;
 		this.shape = new Shape(shape);
 	}
@@ -98,19 +62,16 @@ class Button extends Drawable {
 }
 
 class Player extends Drawable {
-	TreeMap<String, Character> keyBinds;
+	TreeMap<String, Char> keyBinds;
 	int index;
 	color colour;
 		
 	Player() {
-		super(
-			new PVector(width / 2, height / 2),
-			rectangle
-		);
-		this.keyBinds = new TreeMap<String, Character>();
+		this.position = new PVector(width / 2, height / 2);
+		this.keyBinds = new TreeMap<String, Char>();
 	}
 	
-	Player(int index, color colour) {
+	Player(int index, color colour, char button1) {
 		this();
 		this.index = index;
 		this.colour = colour;
@@ -128,7 +89,6 @@ class Player extends Drawable {
 			index,
 			colour
 		);
-
 		String[] keys = {
 			"up",
 			"down",
@@ -140,7 +100,7 @@ class Player extends Drawable {
 		};
 		
 		for (String key: keys) {
-			this.keyBinds.put(
+			this.keyBinds.set(
 				key,
 				buttonNameToKey(xml, key)
 			);
@@ -148,25 +108,25 @@ class Player extends Drawable {
 	}
 	
 	void update() {
-		if (checkKey(keyBinds.get("up"))) {
-		  position.y -= 1;
+		if (checkKey(up)) {
+		  pos.y -= 1;
 		}
-		if (checkKey(keyBinds.get("down"))) {
-		  position.y += 1;
+		if (checkKey(down)) {
+		  pos.y += 1;
 		}
-		if (checkKey(keyBinds.get("left"))) {
-		  position.x -= 1;
+		if (checkKey(left)) {
+		  pos.x -= 1;
 		}    
-		if (checkKey(keyBinds.get("right"))) {
-		  position.x += 1;
+		if (checkKey(right)) {
+		  pos.x += 1;
 		}
-		if (checkKey(keyBinds.get("start"))) {
+		if (checkKey(start)) {
 		  println("Player " + index + " start");
 		}
-		if (checkKey(keyBinds.get("button1"))) {
+		if (checkKey(button1)) {
 		  println("Player " + index + " button 1");
 		}
-		if (checkKey(keyBinds.get("button2"))) {
+		if (checkKey(button2)) {
 		  println("Player " + index + " butt2");
 		}    
 	}
