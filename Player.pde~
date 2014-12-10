@@ -50,7 +50,7 @@ class Player extends Drawable {
 	
 	
 	void draw() {
-		fill(colour);
+		stroke(colour);
 		
 		super.draw();
 	}
