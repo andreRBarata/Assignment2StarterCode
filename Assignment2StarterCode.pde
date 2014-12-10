@@ -9,10 +9,10 @@ import java.util.TreeMap;
 import java.util.Arrays;
 
 PVector[][] rectangle = {
-	{new PVector(0,0), new PVector(50,0)},
-	{new PVector(0,20), new PVector(50,20)},
-	{new PVector(50,0), new PVector(50,20)},
-	{new PVector(0,0), new PVector(0,20)}
+	{new PVector(-25,-10), new PVector(25,-10)},
+	{new PVector(-25,10), new PVector(25,10)},
+	{new PVector(25,-10), new PVector(25,10)},
+	{new PVector(-25,-10), new PVector(-25,10)}
 };
 
 ArrayList<Player> players;
@@ -30,7 +30,9 @@ void setup() {
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		new Shape(rectangle),
+		new Shape(rectangle).transpose(
+			new PVector(25,10)
+		),
 		new CallBack() {
 			public void run() {
 				println("teste");
@@ -43,12 +45,15 @@ void setup() {
 
 void draw() {
 	background(255);
+	
 	for(Player player: players) {
+		stroke(0);
 		player.update();
 		player.draw();
 	}
 	
 	for (int i = 0; i < buttons.size(); i++) {
+		stroke(0);
 		Button button = buttons.get(i);
 		button.draw();
 	}

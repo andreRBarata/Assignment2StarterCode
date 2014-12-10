@@ -48,6 +48,13 @@ class Player extends Drawable {
 		}
 	}
 	
+	
+	void draw() {
+		stroke(colour);
+		
+		super.draw();
+	}
+	
 	void update() {
 		if (checkKey(keyBinds.get("up"))) {
 		  position.y -= 1;

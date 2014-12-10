@@ -28,8 +28,6 @@ class Shape {
 			shape[i][0].add(val);
 			shape[i][1].add(val);
 		}
-		
-		return this;
 	}
 	
 	float maxWidth() {

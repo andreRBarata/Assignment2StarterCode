@@ -28,10 +28,10 @@ public class Assignment2StarterCode extends PApplet {
 
 
 PVector[][] rectangle = {
-	{new PVector(0,0), new PVector(50,0)},
-	{new PVector(0,20), new PVector(50,20)},
-	{new PVector(50,0), new PVector(50,20)},
-	{new PVector(0,0), new PVector(0,20)}
+	{new PVector(-25,-10), new PVector(25,-10)},
+	{new PVector(-25,10), new PVector(25,10)},
+	{new PVector(25,-10), new PVector(25,10)},
+	{new PVector(-25,-10), new PVector(-25,10)}
 };
 
 ArrayList<Player> players;
@@ -49,7 +49,9 @@ public void setup() {
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		new Shape(rectangle),
+		new Shape(rectangle).transpose(
+			new PVector(25,10)
+		),
 		new CallBack() {
 			public void run() {
 				println("teste");
@@ -62,12 +64,15 @@ public void setup() {
 
 public void draw() {
 	background(255);
+	
 	for(Player player: players) {
+		stroke(0);
 		player.update();
 		player.draw();
 	}
 	
 	for (int i = 0; i < buttons.size(); i++) {
+		stroke(0);
 		Button button = buttons.get(i);
 		button.draw();
 	}
@@ -179,11 +184,15 @@ class Shape {
 		return new Shape(Arrays.copyOf(this.shape, this.shape.length));
 	}
 	
-	public void transpose(PVector val) {
+	
+	
+	public Shape transpose(PVector val) {
 		for (int i = 0; i < shape.length; i++) {
 			shape[i][0].add(val);
 			shape[i][1].add(val);
 		}
+		
+		return this;
 	}
 	
 	public float maxWidth() {
@@ -334,6 +343,13 @@ class Player extends Drawable {
 				buttonNameToKey(xml, key)
 			);
 		}
+	}
+	
+	
+	public void draw() {
+		stroke(colour);
+		
+		super.draw();
 	}
 	
 	public void update() {
