@@ -6,6 +6,7 @@
 		See: https://github.com/skooter500/DT228-OOP 
 */
 import java.util.TreeMap;
+import java.util.Arrays;
 
 PVector[][] rectangle = {
 	{new PVector(0,0), new PVector(50,0)},
@@ -29,7 +30,7 @@ void setup() {
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		rectangle,
+		new Shape(rectangle),
 		new CallBack() {
 			public void run() {
 				println("teste");
@@ -102,16 +103,37 @@ void setUpPlayerControllers() {
 	}
 }
 
-void mouseClicked() {
+boolean collider(Drawable p1, Drawable p2) {
+	Shape shapeInSpace1 = (Shape)(p1.shape).clone();
+	Shape shapeInSpace2 = (Shape)(p2.shape).clone();
+	
+	shapeInSpace1.transpose(p1.position);
+	shapeInSpace2.transpose(p2.position);
+	
+	for (int i = 0; i < shapeInSpace1.size(); i++) {
+		
+	}
+	
+	return false;
+}
+
+void mousePressed() {
 	for (int i = 0; i < buttons.size(); i++) {
 		Button button = buttons.get(i);
 		
 		if (mouseX > button.position.x && mouseX < button.position.x + button.shape.maxWidth()) {
 			if (mouseY > button.position.y && mouseY < button.position.y + button.shape.maxHeight()) {
-				fill(color(50));
+				button.clicked = true;
 				button.callback.run();
-				fill(color(0));
 			}
 		}
+	}
+}
+
+void mouseReleased() {
+	for (int i = 0; i < buttons.size(); i++) {
+		Button button = buttons.get(i);
+		
+		button.clicked = false;
 	}
 }

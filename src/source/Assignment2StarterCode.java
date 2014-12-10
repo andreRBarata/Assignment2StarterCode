@@ -4,6 +4,7 @@ import processing.event.*;
 import processing.opengl.*; 
 
 import java.util.TreeMap; 
+import java.util.Arrays; 
 
 import java.util.HashMap; 
 import java.util.ArrayList; 
@@ -23,6 +24,7 @@ public class Assignment2StarterCode extends PApplet {
 		Loads player properties from an xml file
 		See: https://github.com/skooter500/DT228-OOP 
 */
+
 
 
 PVector[][] rectangle = {
@@ -47,7 +49,7 @@ public void setup() {
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		rectangle,
+		new Shape(rectangle),
 		new CallBack() {
 			public void run() {
 				println("teste");
@@ -120,17 +122,38 @@ public void setUpPlayerControllers() {
 	}
 }
 
-public void mouseClicked() {
+public boolean collider(Drawable p1, Drawable p2) {
+	Shape shapeInSpace1 = (Shape)(p1.shape).clone();
+	Shape shapeInSpace2 = (Shape)(p2.shape).clone();
+	
+	shapeInSpace1.transpose(p1.position);
+	shapeInSpace2.transpose(p2.position);
+	
+	for (int i = 0; i < shapeInSpace1.size(); i++) {
+		
+	}
+	
+	return false;
+}
+
+public void mousePressed() {
 	for (int i = 0; i < buttons.size(); i++) {
 		Button button = buttons.get(i);
 		
 		if (mouseX > button.position.x && mouseX < button.position.x + button.shape.maxWidth()) {
 			if (mouseY > button.position.y && mouseY < button.position.y + button.shape.maxHeight()) {
-				fill(color(50));
+				button.clicked = true;
 				button.callback.run();
-				fill(color(0));
 			}
 		}
+	}
+}
+
+public void mouseReleased() {
+	for (int i = 0; i < buttons.size(); i++) {
+		Button button = buttons.get(i);
+		
+		button.clicked = false;
 	}
 }
 interface CallBack {
@@ -152,32 +175,59 @@ class Shape {
 		return shape[i];
 	}
 	
+	public Shape clone() {
+		return new Shape(Arrays.copyOf(this.shape, this.shape.length));
+	}
+	
+	public void transpose(PVector val) {
+		for (int i = 0; i < shape.length; i++) {
+			shape[i][0].add(val);
+			shape[i][1].add(val);
+		}
+	}
+	
 	public float maxWidth() {
+		float minWidth = 0;
 		float maxWidth = 0;
 		for (int i = 0; i < shape.length; i++) {
 			if (i == 0 || shape[i][0].x > maxWidth) {
 				maxWidth = shape[i][0].x;
 			}
-			if (i == 0 || shape[i][1].x > maxWidth) {
+			if (shape[i][1].x > maxWidth) {
 				maxWidth = shape[i][1].x;
+			}
+			
+			if (i == 0 || shape[i][0].x < minWidth) {
+				minWidth = shape[i][0].x;
+			}
+			if (shape[i][1].x < minWidth) {
+				minWidth = shape[i][1].x;
 			}
 		}
 		
-		return maxWidth;
+		return maxWidth - minWidth;
 	}
 	
 	public float maxHeight() {
+		float minHeight = 0;
 		float maxHeight = 0;
 		for (int i = 0; i < shape.length; i++) {
 			if (i == 0 || shape[i][0].y > maxHeight) {
 				maxHeight = shape[i][0].y;
 			}
-			if (i == 0 || shape[i][1].y > maxHeight) {
+			if (shape[i][1].y > maxHeight) {
 				maxHeight = shape[i][1].y;
+			}
+			
+			if (i == 0 || shape[i][0].y < minHeight) {
+				minHeight = shape[i][0].y;
+			}
+			if (shape[i][1].y < minHeight) {
+				minHeight = shape[i][1].y;
 			}
 		}
 		
-		return maxHeight;
+		return maxHeight - minHeight;
 	}
 }
 
@@ -185,9 +235,9 @@ class Drawable {
 	PVector position;
 	Shape shape;
 	
-	Drawable(PVector position, PVector[][] shape) {
+	Drawable(PVector position, Shape shape) {
 		this.position = position;
-		this.shape = new Shape(shape);
+		this.shape = shape;
 	}
 	
 	public void draw() {
@@ -204,15 +254,15 @@ class Drawable {
 		}
 	}
 }
-
 class Button extends Drawable {
 	CallBack callback;
+	boolean clicked;
 	String text;
 	
-	Button(PVector position, String text, PVector[][] shape, CallBack callback) {
+	Button(PVector position, String text, Shape shape, CallBack callback) {
 		super(position, shape);
 		
-		
+		this.clicked = false;
 		this.callback = callback;
 		this.text = text;
 	}
@@ -222,7 +272,12 @@ class Button extends Drawable {
 
 		super.draw();
 		
-		fill(color(0));
+		if (!clicked) {
+			fill(color(0));
+		}
+		else {
+			fill(color(20,20,200));
+		}
 		
 		text(
 			text,
@@ -231,7 +286,6 @@ class Button extends Drawable {
 		);
 	}
 }
-
 class Player extends Drawable {
 	TreeMap<String, Character> keyBinds;
 	int index;
@@ -240,7 +294,7 @@ class Player extends Drawable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			rectangle
+			new Shape(rectangle)
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}
