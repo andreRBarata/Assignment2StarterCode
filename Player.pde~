@@ -75,7 +75,7 @@ class Player extends Drawable {
 		  println("Player " + index + " button 1");
 		}
 		if (checkKey(keyBinds.get("button2"))) {
-		  println("Player " + index + " butt2");
+		  println("Player " + index + " button 2");
 		}    
 	}
 }

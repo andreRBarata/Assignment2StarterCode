@@ -6,7 +6,7 @@ class Player extends Drawable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			new Shape(rectangle)
+			new Shape(triangle)
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}

@@ -27,12 +27,7 @@ public class Assignment2StarterCode extends PApplet {
 
 
 
-PVector[][] rectangle = {
-	{new PVector(-25,-10), new PVector(25,-10)},
-	{new PVector(-25,10), new PVector(25,10)},
-	{new PVector(25,-10), new PVector(25,10)},
-	{new PVector(-25,-10), new PVector(-25,10)}
-};
+Shape map;
 
 ArrayList<Player> players;
 ArrayList<Button> buttons;
@@ -49,9 +44,13 @@ public void setup() {
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		new Shape(rectangle).transpose(
-			new PVector(25,10)
-		),
+		new Shape(rectangle)
+			.scale(
+				new PVector(2.5f, 1)
+			)
+			.transpose(
+				new PVector(25,10)
+			),
 		new CallBack() {
 			public void run() {
 				println("teste");
@@ -180,6 +179,34 @@ class Shape extends ArrayList<PVector[]> {
 		return this;
 	}
 	
+	//To be altered later
+	public Shape scale(PVector val) {
+		for (int i = 0; i < this.size(); i++) {
+			PVector newLine[] = {
+				this.get(i)[0].get(),
+				this.get(i)[1].get()
+			};
+			
+			newLine[0].x *= val.x;
+			newLine[0].y *= val.y;
+			newLine[1].x *= val.x;
+			newLine[1].y *= val.y;
+			
+			this.set(i, newLine);
+		}
+		
+		return this;
+	}
+	
+	public Shape scale(float val) {
+		for (int i = 0; i < this.size(); i++) {
+			this.get(i)[0].mult(val);
+			this.get(i)[1].mult(val);
+		}
+		
+		return this;
+	}
+	
 	public float maxWidth() {
 		float minWidth = 0;
 		float maxWidth = 0;
@@ -288,7 +315,7 @@ class Player extends Drawable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			new Shape(rectangle)
+			new Shape(triangle)
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}
@@ -361,6 +388,18 @@ class Player extends Drawable {
 		}    
 	}
 }
+PVector[][] rectangle = {
+	{new PVector(-10,-10), new PVector(10,-10)},
+	{new PVector(-10,10), new PVector(10,10)},
+	{new PVector(10,-10), new PVector(10,10)},
+	{new PVector(-10,-10), new PVector(-10,10)}
+};
+
+PVector[][] triangle = {
+	{new PVector(0,-10), new PVector(-10,10)},
+	{new PVector(0,-10), new PVector(10,10)},
+	{new PVector(-10,10), new PVector(10,10)}
+};
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "Assignment2StarterCode" };
     if (passedArgs != null) {

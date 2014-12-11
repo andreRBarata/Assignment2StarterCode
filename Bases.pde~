@@ -5,13 +5,41 @@ interface CallBack {
 class Shape extends ArrayList<PVector[]> {
 	
 	Shape(PVector[][] shape) {
-		super((ArrayList<PVector[]>)Arrays.asList(shape));
+		super(Arrays.asList(shape));
 	}
 	
 	Shape transpose(PVector val) {
 		for (int i = 0; i < this.size(); i++) {
 			this.get(i)[0].add(val);
 			this.get(i)[1].add(val);
+		}
+		
+		return this;
+	}
+	
+	//To be altered later
+	Shape scale(PVector val) {
+		for (int i = 0; i < this.size(); i++) {
+			PVector newLine[] = {
+				this.get(i)[0].get(),
+				this.get(i)[1].get()
+			};
+			
+			newLine[0].x *= val.x;
+			newLine[0].y *= val.y;
+			newLine[1].x *= val.x;
+			newLine[1].y *= val.y;
+			
+			this.set(i, newLine);
+		}
+		
+		return this;
+	}
+	
+	Shape scale(float val) {
+		for (int i = 0; i < this.size(); i++) {
+			this.get(i)[0].mult(val);
+			this.get(i)[1].mult(val);
 		}
 		
 		return this;

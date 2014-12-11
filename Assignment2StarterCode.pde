@@ -8,12 +8,7 @@
 import java.util.TreeMap;
 import java.util.Arrays;
 
-PVector[][] rectangle = {
-	{new PVector(-25,-10), new PVector(25,-10)},
-	{new PVector(-25,10), new PVector(25,10)},
-	{new PVector(25,-10), new PVector(25,10)},
-	{new PVector(-25,-10), new PVector(-25,10)}
-};
+Shape map;
 
 ArrayList<Player> players;
 ArrayList<Button> buttons;
@@ -30,9 +25,13 @@ void setup() {
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		new Shape(rectangle).transpose(
-			new PVector(25,10)
-		),
+		new Shape(rectangle)
+			.scale(
+				new PVector(2.5, 1)
+			)
+			.transpose(
+				new PVector(25,10)
+			),
 		new CallBack() {
 			public void run() {
 				println("teste");

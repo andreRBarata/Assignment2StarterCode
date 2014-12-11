@@ -17,6 +17,34 @@ class Shape extends ArrayList<PVector[]> {
 		return this;
 	}
 	
+	//To be altered later
+	Shape scale(PVector val) {
+		for (int i = 0; i < this.size(); i++) {
+			PVector newLine[] = {
+				this.get(i)[0].get(),
+				this.get(i)[1].get()
+			};
+			
+			newLine[0].x *= val.x;
+			newLine[0].y *= val.y;
+			newLine[1].x *= val.x;
+			newLine[1].y *= val.y;
+			
+			this.set(i, newLine);
+		}
+		
+		return this;
+	}
+	
+	Shape scale(float val) {
+		for (int i = 0; i < this.size(); i++) {
+			this.get(i)[0].mult(val);
+			this.get(i)[1].mult(val);
+		}
+		
+		return this;
+	}
+	
 	float maxWidth() {
 		float minWidth = 0;
 		float maxWidth = 0;
