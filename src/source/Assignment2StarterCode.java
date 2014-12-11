@@ -165,31 +165,16 @@ interface CallBack {
 	public void run();
 }
 
-class Shape {
-	PVector[][] shape;
+class Shape extends ArrayList<PVector[]> {
 	
 	Shape(PVector[][] shape) {
-		this.shape = shape;
+		super(Arrays.asList(shape));
 	}
-	
-	public int size() {
-		return shape.length;
-	}
-	
-	public PVector[] get(int i) {
-		return shape[i];
-	}
-	
-	public Shape clone() {
-		return new Shape(Arrays.copyOf(this.shape, this.shape.length));
-	}
-	
-	
 	
 	public Shape transpose(PVector val) {
-		for (int i = 0; i < shape.length; i++) {
-			shape[i][0].add(val);
-			shape[i][1].add(val);
+		for (int i = 0; i < this.size(); i++) {
+			this.get(i)[0].add(val);
+			this.get(i)[1].add(val);
 		}
 		
 		return this;
@@ -198,19 +183,19 @@ class Shape {
 	public float maxWidth() {
 		float minWidth = 0;
 		float maxWidth = 0;
-		for (int i = 0; i < shape.length; i++) {
-			if (i == 0 || shape[i][0].x > maxWidth) {
-				maxWidth = shape[i][0].x;
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i)[0].x > maxWidth) {
+				maxWidth = this.get(i)[0].x;
 			}
-			if (shape[i][1].x > maxWidth) {
-				maxWidth = shape[i][1].x;
+			if (this.get(i)[1].x > maxWidth) {
+				maxWidth = this.get(i)[1].x;
 			}
 			
-			if (i == 0 || shape[i][0].x < minWidth) {
-				minWidth = shape[i][0].x;
+			if (i == 0 || this.get(i)[0].x < minWidth) {
+				minWidth = this.get(i)[0].x;
 			}
-			if (shape[i][1].x < minWidth) {
-				minWidth = shape[i][1].x;
+			if (this.get(i)[1].x < minWidth) {
+				minWidth = this.get(i)[1].x;
 			}
 		}
 		
@@ -220,19 +205,19 @@ class Shape {
 	public float maxHeight() {
 		float minHeight = 0;
 		float maxHeight = 0;
-		for (int i = 0; i < shape.length; i++) {
-			if (i == 0 || shape[i][0].y > maxHeight) {
-				maxHeight = shape[i][0].y;
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i)[0].y > maxHeight) {
+				maxHeight = this.get(i)[0].y;
 			}
-			if (shape[i][1].y > maxHeight) {
-				maxHeight = shape[i][1].y;
+			if (this.get(i)[1].y > maxHeight) {
+				maxHeight = this.get(i)[1].y;
 			}
 			
-			if (i == 0 || shape[i][0].y < minHeight) {
-				minHeight = shape[i][0].y;
+			if (i == 0 || this.get(i)[0].y < minHeight) {
+				minHeight = this.get(i)[0].y;
 			}
-			if (shape[i][1].y < minHeight) {
-				minHeight = shape[i][1].y;
+			if (this.get(i)[1].y < minHeight) {
+				minHeight = this.get(i)[1].y;
 			}
 		}
 		
@@ -372,7 +357,7 @@ class Player extends Drawable {
 		  println("Player " + index + " button 1");
 		}
 		if (checkKey(keyBinds.get("button2"))) {
-		  println("Player " + index + " butt2");
+		  println("Player " + index + " button 2");
 		}    
 	}
 }
