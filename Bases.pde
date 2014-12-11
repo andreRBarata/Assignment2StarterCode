@@ -3,15 +3,30 @@ interface CallBack {
 }
 
 class Shape extends ArrayList<PVector[]> {
+	ArrayList<PVector> points;
 	
 	Shape(PVector[][] shape) {
-		super(Arrays.asList(shape));
+		points = new ArrayList<PVector>();
+		
+		for (int i = 0; i < shape.length; i++) {
+			PVector[] line = new PVector[2];
+			
+			for (int e = 0; e < 2; e++) {
+				if (!points.contains(shape[i][e])) {
+					points.add(shape[i][e]);
+					line[e] = shape[i][e];
+				}
+				else {
+					line[e] = points.get(points.indexOf(shape[i][e]));
+				}
+			}
+			this.add(line);
+		}
 	}
 	
 	Shape transpose(PVector val) {
-		for (int i = 0; i < this.size(); i++) {
-			this.get(i)[0].add(val);
-			this.get(i)[1].add(val);
+		for (int i = 0; i < this.points.size(); i++) {
+			points.get(i).add(val);
 		}
 		
 		return this;
@@ -19,27 +34,17 @@ class Shape extends ArrayList<PVector[]> {
 	
 	//To be altered later
 	Shape scale(PVector val) {
-		for (int i = 0; i < this.size(); i++) {
-			PVector newLine[] = {
-				this.get(i)[0].get(),
-				this.get(i)[1].get()
-			};
-			
-			newLine[0].x *= val.x;
-			newLine[0].y *= val.y;
-			newLine[1].x *= val.x;
-			newLine[1].y *= val.y;
-			
-			this.set(i, newLine);
+		for (int i = 0; i < this.points.size(); i++) {
+			points.get(i).x *= val.x;
+			points.get(i).y *= val.y;
 		}
 		
 		return this;
 	}
 	
 	Shape scale(float val) {
-		for (int i = 0; i < this.size(); i++) {
-			this.get(i)[0].mult(val);
-			this.get(i)[1].mult(val);
+		for (int i = 0; i < this.points.size(); i++) {
+			points.get(i).mult(val);
 		}
 		
 		return this;
@@ -48,19 +53,13 @@ class Shape extends ArrayList<PVector[]> {
 	float maxWidth() {
 		float minWidth = 0;
 		float maxWidth = 0;
-		for (int i = 0; i < this.size(); i++) {
-			if (i == 0 || this.get(i)[0].x > maxWidth) {
-				maxWidth = this.get(i)[0].x;
-			}
-			if (this.get(i)[1].x > maxWidth) {
-				maxWidth = this.get(i)[1].x;
+		for (int i = 0; i < this.points.size(); i++) {
+			if (i == 0 || points.get(i).x > maxWidth) {
+				maxWidth = points.get(i).x;
 			}
 			
-			if (i == 0 || this.get(i)[0].x < minWidth) {
-				minWidth = this.get(i)[0].x;
-			}
-			if (this.get(i)[1].x < minWidth) {
-				minWidth = this.get(i)[1].x;
+			if (i == 0 || points.get(i).x < minWidth) {
+				minWidth = points.get(i).x;
 			}
 		}
 		
@@ -70,19 +69,13 @@ class Shape extends ArrayList<PVector[]> {
 	float maxHeight() {
 		float minHeight = 0;
 		float maxHeight = 0;
-		for (int i = 0; i < this.size(); i++) {
-			if (i == 0 || this.get(i)[0].y > maxHeight) {
-				maxHeight = this.get(i)[0].y;
-			}
-			if (this.get(i)[1].y > maxHeight) {
-				maxHeight = this.get(i)[1].y;
+		for (int i = 0; i < this.points.size(); i++) {
+			if (i == 0 || points.get(i).y > maxHeight) {
+				maxHeight = points.get(i).y;
 			}
 			
-			if (i == 0 || this.get(i)[0].y < minHeight) {
-				minHeight = this.get(i)[0].y;
-			}
-			if (this.get(i)[1].y < minHeight) {
-				minHeight = this.get(i)[1].y;
+			if (i == 0 || points.get(i).y < minHeight) {
+				minHeight = points.get(i).y;
 			}
 		}
 		
