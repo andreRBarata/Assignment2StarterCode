@@ -5,10 +5,9 @@
 		Loads player properties from an xml file
 		See: https://github.com/skooter500/DT228-OOP 
 */
-import java.util.TreeMap;
-import java.util.Arrays;
+import java.util.*;
 
-Shape map;
+Drawable map;
 
 ArrayList<Player> players;
 ArrayList<Button> buttons;
@@ -17,15 +16,18 @@ boolean[] keys = new boolean[526];
 void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
+	size(700, 500);
 	
+	shapes();
+	drawMap();
+
 	background(255);
-	size(500, 500);
 	setUpPlayerControllers();
 	
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		new Shape(rectangle)
+		rectangle
 			.scale(
 				new PVector(2.5, 1)
 			)
@@ -56,6 +58,37 @@ void draw() {
 		Button button = buttons.get(i);
 		button.draw();
 	}
+	
+	map.draw();
+}
+
+void drawMap() {
+	Shape shape = new Shape();
+	PVector point = new PVector(0,0);
+	float theta = 0;
+	float thetaInc = TWO_PI / 10000;
+	float noiseScale = 0.2;
+
+	while (theta - PI < HALF_PI) {
+		float radius = 10 + 3 * noise(	
+			noiseScale * point.x, 
+			noiseScale * point.y
+		);
+		
+		point = new PVector(
+			sin(theta) * radius,
+	    		cos(theta) * radius
+	    	);
+		
+		shape.add(point);
+		
+		theta += thetaInc;
+	}
+	
+	map = new Drawable(
+		new PVector(width/2,height/2),
+		shape.scale(70)
+	);
 }
 
 void keyPressed() {
@@ -105,20 +138,6 @@ void setUpPlayerControllers() {
 		p.position.y = 300;
 		players.add(p);         
 	}
-}
-
-boolean collider(Drawable p1, Drawable p2) {
-	Shape shapeInSpace1 = (Shape)(p1.shape).clone();
-	Shape shapeInSpace2 = (Shape)(p2.shape).clone();
-	
-	shapeInSpace1.transpose(p1.position);
-	shapeInSpace2.transpose(p2.position);
-	
-	for (int i = 0; i < shapeInSpace1.size(); i++) {
-		
-	}
-	
-	return false;
 }
 
 void mousePressed() {

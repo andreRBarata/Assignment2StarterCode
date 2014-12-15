@@ -1,0 +1,3 @@
+class Poligon extends TreeMap<Shape> {
+
+}

@@ -3,8 +3,7 @@ import processing.data.*;
 import processing.event.*; 
 import processing.opengl.*; 
 
-import java.util.TreeMap; 
-import java.util.Arrays; 
+import java.util.*; 
 
 import java.util.HashMap; 
 import java.util.ArrayList; 
@@ -26,8 +25,7 @@ public class Assignment2StarterCode extends PApplet {
 */
 
 
-
-Shape map;
+Drawable map;
 
 ArrayList<Player> players;
 ArrayList<Button> buttons;
@@ -36,15 +34,18 @@ boolean[] keys = new boolean[526];
 public void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
+	size(700, 500);
 	
+	shapes();
+	drawMap();
+
 	background(255);
-	size(500, 500);
 	setUpPlayerControllers();
 	
 	Button button = new Button(
 		new PVector(width/2, height/2),
 		"button",
-		new Shape(rectangle)
+		rectangle
 			.scale(
 				new PVector(2.5f, 1)
 			)
@@ -75,6 +76,37 @@ public void draw() {
 		Button button = buttons.get(i);
 		button.draw();
 	}
+	
+	map.draw();
+}
+
+public void drawMap() {
+	Shape shape = new Shape();
+	PVector point = new PVector(0,0);
+	float theta = 0;
+	float thetaInc = TWO_PI / 10000;
+	float noiseScale = 0.2f;
+
+	while (theta - PI < HALF_PI) {
+		float radius = 10 + 3 * noise(	
+			noiseScale * point.x, 
+			noiseScale * point.y
+		);
+		
+		point = new PVector(
+			sin(theta) * radius,
+	    		cos(theta) * radius
+	    	);
+		
+		shape.add(point);
+		
+		theta += thetaInc;
+	}
+	
+	map = new Drawable(
+		new PVector(width/2,height/2),
+		shape.scale(70)
+	);
 }
 
 public void keyPressed() {
@@ -126,20 +158,6 @@ public void setUpPlayerControllers() {
 	}
 }
 
-public boolean collider(Drawable p1, Drawable p2) {
-	Shape shapeInSpace1 = (Shape)(p1.shape).clone();
-	Shape shapeInSpace2 = (Shape)(p2.shape).clone();
-	
-	shapeInSpace1.transpose(p1.position);
-	shapeInSpace2.transpose(p2.position);
-	
-	for (int i = 0; i < shapeInSpace1.size(); i++) {
-		
-	}
-	
-	return false;
-}
-
 public void mousePressed() {
 	for (int i = 0; i < buttons.size(); i++) {
 		Button button = buttons.get(i);
@@ -164,64 +182,85 @@ interface CallBack {
 	public void run();
 }
 
-class Shape extends ArrayList<PVector[]> {
-	ArrayList<PVector> points;
+public boolean isNull(Object o1, Object o2) {
+	return (o1 == null || o2 == null);
+}
+
+class Shape extends ArrayList<PVector> {
 	
-	Shape(PVector[][] shape) {
-		points = new ArrayList<PVector>();
+	Shape() {
+		super();
+	}
+	
+	Shape(Shape shape) {
+		super(shape);
+	}
+	
+	Shape(PVector[] shape) {
+		super(Arrays.asList(shape));
+	}
+	
+	public Shape clone() {
+		Shape shape = new Shape();
 		
-		for (int i = 0; i < shape.length; i++) {
-			PVector[] line = new PVector[2];
-			
-			for (int e = 0; e < 2; e++) {
-				if (!points.contains(shape[i][e])) {
-					points.add(shape[i][e]);
-					line[e] = shape[i][e];
-				}
-				else {
-					line[e] = points.get(points.indexOf(shape[i][e]));
-				}
-			}
-			this.add(line);
+		for (PVector point: this) {
+			shape.add(point.get());
 		}
+		
+		return shape;
+	}
+	
+	public Shape rotate(float degrees) {
+		Shape shape = (Shape)this.clone();
+		
+		for (int i = 0; i < shape.size(); i++) {
+			shape.get(i).rotate(degrees);
+		}
+		
+		return shape;
 	}
 	
 	public Shape transpose(PVector val) {
-		for (int i = 0; i < this.points.size(); i++) {
-			points.get(i).add(val);
+		Shape shape = (Shape)this.clone();
+		
+		for (int i = 0; i < shape.size(); i++) {
+			shape.get(i).add(val);
 		}
 		
-		return this;
+		return shape;
 	}
 	
-	//To be altered later
 	public Shape scale(PVector val) {
-		for (int i = 0; i < this.points.size(); i++) {
-			points.get(i).x *= val.x;
-			points.get(i).y *= val.y;
+		Shape shape = (Shape)this.clone();
+	
+		for (int i = 0; i < shape.size(); i++) {
+			shape.get(i).x *= val.x;
+			shape.get(i).y *= val.y;
 		}
 		
-		return this;
+		return shape;
 	}
 	
 	public Shape scale(float val) {
-		for (int i = 0; i < this.points.size(); i++) {
-			points.get(i).mult(val);
+		Shape shape = (Shape)this.clone();
+	
+		for (int i = 0; i < shape.size(); i++) {
+			shape.get(i).mult(val);
 		}
 		
-		return this;
+		return shape;
 	}
 	
 	public float maxWidth() {
 		float minWidth = 0;
 		float maxWidth = 0;
-		for (int i = 0; i < this.points.size(); i++) {
-			if (i == 0 || points.get(i).x > maxWidth) {
-				maxWidth = points.get(i).x;
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x > maxWidth) {
+				maxWidth = this.get(i).x;
 			}
 			
-			if (i == 0 || points.get(i).x < minWidth) {
-				minWidth = points.get(i).x;
+			if (i == 0 || this.get(i).x < minWidth) {
+				minWidth = this.get(i).x;
 			}
 		}
 		
@@ -231,13 +270,13 @@ class Shape extends ArrayList<PVector[]> {
 	public float maxHeight() {
 		float minHeight = 0;
 		float maxHeight = 0;
-		for (int i = 0; i < this.points.size(); i++) {
-			if (i == 0 || points.get(i).y > maxHeight) {
-				maxHeight = points.get(i).y;
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).y > maxHeight) {
+				maxHeight = this.get(i).y;
 			}
 			
-			if (i == 0 || points.get(i).y < minHeight) {
-				minHeight = points.get(i).y;
+			if (i == 0 || this.get(i).y < minHeight) {
+				minHeight = this.get(i).y;
 			}
 		}
 		
@@ -255,9 +294,23 @@ class Drawable {
 	}
 	
 	public void draw() {
-		for (int i = 0; i < shape.size(); i++) {
-			PVector current1 = PVector.add(shape.get(i)[0], position);
-			PVector current2 = PVector.add(shape.get(i)[1], position);
+		int i = 0;
+
+		Shape shapeInSpace = shape.transpose(position);
+
+		while (i < shape.size()) {
+			PVector current1;
+			PVector current2;
+			
+			current1 = shapeInSpace.get(
+				i % shape.size()
+			);	
+			
+			i++;
+
+			current2 = shapeInSpace.get(
+				i % shape.size()
+			);
 			
 			line(
 				current1.x,
@@ -267,6 +320,82 @@ class Drawable {
 			);
 		}
 	}
+}
+
+public boolean inLine(PVector point, PVector[] line) {
+	return  (
+			(x > max(line[0].x, line[1].x)) &&
+			(x < min(line[0].x, line[1].x))
+		);	
+}
+
+public PVector intersectionLines(PVector[] line1, PVector[] line2) {
+	float m1 = (
+		line1[0].y - line1[1].y /
+		line1[0].x - line1[1].x
+	);
+	float m2 = (
+		line2[0].y - line2[1].y /
+		line2[0].x - line2[1].x
+	);
+
+	if (m1 != m2) {
+		float b1 = line1[0].y - m1 * line1[0].x;
+		float b2 = line2[0].y - m2 * line2[0].x;
+		
+		float x = (
+			(b2 - b1) / (m1 - m2)
+		);
+		float y = m1 * x + b1;
+		
+		PVector intersection = new PVector(
+			x,
+			y
+		);
+		
+		if (inLine(intersection, line1) && inLine(intersection, line2)) {
+			return intersection;
+		}
+		else {
+			return null;
+		}
+	}
+	else {
+		return null;
+	}
+}
+
+public Shape collider(Drawable p1, Drawable p2) {
+	Shape shapeInSpace1 = (Shape)(p1.shape).clone();
+	Shape shapeInSpace2 = (Shape)(p2.shape).clone();
+	Shape intersection = new Shape();
+	
+	shapeInSpace1.transpose(p1.position);
+	shapeInSpace2.transpose(p2.position);
+	
+	for (int i = 0; i < shapeInSpace1.size(); i++) {
+		for (int e = 0; e < shapeInSpace2.size(); e++) {
+			int nextIndex1 = (i + 1) % shapeInSpace1.size();
+			int nextIndex2 = (e + 1) % shapeInSpace2.size();
+		
+			PVector intersectionPoint = intersectionLines(
+				new PVector[] {
+					shapeInSpace1.get(i),
+					shapeInSpace1.get(nextIndex1)
+				},
+				new PVector[] {
+					shapeInSpace2.get(i),
+					shapeInSpace2.get(nextIndex2)
+				}
+			);
+			
+			if (intersectionPoint != null) {
+				intersection.add(intersectionPoint);
+			}
+		}
+	}
+	
+	return intersection;
 }
 class Button extends Drawable {
 	CallBack callback;
@@ -308,7 +437,7 @@ class Player extends Drawable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			new Shape(triangle)
+			triangle.scale(1.5f)
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}
@@ -359,40 +488,64 @@ class Player extends Drawable {
 	
 	public void update() {
 		if (checkKey(keyBinds.get("up"))) {
-		  position.y -= 1;
+			position.y -= 1;
 		}
 		if (checkKey(keyBinds.get("down"))) {
-		  position.y += 1;
+			position.y += 1;
 		}
 		if (checkKey(keyBinds.get("left"))) {
-		  position.x -= 1;
+			position.x -= 1;
 		}    
 		if (checkKey(keyBinds.get("right"))) {
-		  position.x += 1;
+			position.x += 1;
 		}
 		if (checkKey(keyBinds.get("start"))) {
-		  println("Player " + index + " start");
+			println("Player " + index + " start");
 		}
 		if (checkKey(keyBinds.get("button1"))) {
-		  println("Player " + index + " button 1");
+			println("Player " + index + " button 1");
 		}
 		if (checkKey(keyBinds.get("button2"))) {
-		  println("Player " + index + " button 2");
+			println("Player " + index + " button 2");
 		}    
 	}
 }
-PVector[][] rectangle = {
-	{new PVector(-10,-10), new PVector(10,-10)},
-	{new PVector(-10,10), new PVector(10,10)},
-	{new PVector(10,-10), new PVector(10,10)},
-	{new PVector(-10,-10), new PVector(-10,10)}
-};
+Shape rectangle;
+Shape triangle;
+Shape circle;
 
-PVector[][] triangle = {
-	{new PVector(0,-10), new PVector(-10,10)},
-	{new PVector(0,-10), new PVector(10,10)},
-	{new PVector(-10,10), new PVector(10,10)}
-};
+public void shapes() {
+	rectangle = new Shape(
+		new PVector[] {
+			new PVector(-10,-10),
+			new PVector(10,-10),
+			new PVector(10,10),
+			new PVector(-10,10)
+		}
+	);
+	
+	triangle = new Shape(
+		new PVector[] {
+			new PVector(0,-10),
+			new PVector(-10,10),
+			new PVector(10,10)
+		}
+	);
+	
+	float theta = 0;
+	float thetaInc = TWO_PI / 10;
+	circle = new Shape();
+	while (theta < TWO_PI) {
+		circle.add(
+			new PVector(
+		    		sin(theta) * 10,
+		    		cos(theta) * 10
+		    	)
+		);
+		
+		theta += thetaInc;
+	}
+}
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "Assignment2StarterCode" };
     if (passedArgs != null) {
