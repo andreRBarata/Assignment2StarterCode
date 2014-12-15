@@ -77,6 +77,10 @@ public void draw() {
 		button.draw();
 	}
 	
+	println(
+		collider(players.get(0), players.get(1)).size()
+	);
+	
 	map.draw();
 }
 
@@ -324,19 +328,19 @@ class Drawable {
 
 public boolean inLine(PVector point, PVector[] line) {
 	return  (
-			(x > max(line[0].x, line[1].x)) &&
-			(x < min(line[0].x, line[1].x))
+			(point.x < max(line[0].x, line[1].x)) &&
+			(point.x > min(line[0].x, line[1].x))
 		);	
 }
 
 public PVector intersectionLines(PVector[] line1, PVector[] line2) {
 	float m1 = (
-		line1[0].y - line1[1].y /
-		line1[0].x - line1[1].x
+		(line1[0].y - line1[1].y) /
+		(line1[0].x - line1[1].x)
 	);
 	float m2 = (
-		line2[0].y - line2[1].y /
-		line2[0].x - line2[1].x
+		(line2[0].y - line2[1].y) /
+		(line2[0].x - line2[1].x)
 	);
 
 	if (m1 != m2) {
@@ -366,12 +370,11 @@ public PVector intersectionLines(PVector[] line1, PVector[] line2) {
 }
 
 public Shape collider(Drawable p1, Drawable p2) {
-	Shape shapeInSpace1 = (Shape)(p1.shape).clone();
-	Shape shapeInSpace2 = (Shape)(p2.shape).clone();
+	Shape shapeInSpace1 = (Shape)(p1.shape)
+		.transpose(p1.position);
+	Shape shapeInSpace2 = (Shape)(p2.shape)
+		.transpose(p2.position);
 	Shape intersection = new Shape();
-	
-	shapeInSpace1.transpose(p1.position);
-	shapeInSpace2.transpose(p2.position);
 	
 	for (int i = 0; i < shapeInSpace1.size(); i++) {
 		for (int e = 0; e < shapeInSpace2.size(); e++) {
@@ -384,12 +387,15 @@ public Shape collider(Drawable p1, Drawable p2) {
 					shapeInSpace1.get(nextIndex1)
 				},
 				new PVector[] {
-					shapeInSpace2.get(i),
+					shapeInSpace2.get(e),
 					shapeInSpace2.get(nextIndex2)
 				}
 			);
 			
 			if (intersectionPoint != null) {
+				line(0, intersectionPoint.y, width, intersectionPoint.y);
+				line(intersectionPoint.x, 0, intersectionPoint.x, height);
+			
 				intersection.add(intersectionPoint);
 			}
 		}
@@ -429,7 +435,27 @@ class Button extends Drawable {
 		);
 	}
 }
-class Player extends Drawable {
+class Droppable extends Drawable {
+	PVector speed;
+	
+	Droppable(PVector position, Shape shape) {
+		super(position, shape);
+		speed = new PVector(0,0);
+	}
+	
+	public void draw() {
+		this.position.add(this.speed);
+		if (this.speed.x > 0) {
+			this.speed.x--;
+		}
+		else if (this.speed.x < 0) {
+			this.speed.x++;
+		}
+		
+		super.draw();
+	}
+}
+class Player extends Droppable {
 	TreeMap<String, Character> keyBinds;
 	int index;
 	int colour;
@@ -488,16 +514,16 @@ class Player extends Drawable {
 	
 	public void update() {
 		if (checkKey(keyBinds.get("up"))) {
-			position.y -= 1;
+			speed.y -= 2;
 		}
 		if (checkKey(keyBinds.get("down"))) {
-			position.y += 1;
+			speed.y += 2;
 		}
 		if (checkKey(keyBinds.get("left"))) {
-			position.x -= 1;
+			speed.x -= 2;
 		}    
 		if (checkKey(keyBinds.get("right"))) {
-			position.x += 1;
+			speed.x += 2;
 		}
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
@@ -509,6 +535,9 @@ class Player extends Drawable {
 			println("Player " + index + " button 2");
 		}    
 	}
+}
+class Poligon extends TreeMap<String,Shape> {
+
 }
 Shape rectangle;
 Shape triangle;

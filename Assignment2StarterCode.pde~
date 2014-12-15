@@ -59,6 +59,10 @@ void draw() {
 		button.draw();
 	}
 	
+	println(
+		collider(players.get(0), players.get(0)).size()
+	);
+	
 	map.draw();
 }
 
@@ -86,7 +90,7 @@ void drawMap() {
 	}
 	
 	map = new Drawable(
-		new PVector(width/2,height + 50 * 15),
+		new PVector(width/2,height/2),
 		shape.scale(70)
 	);
 }

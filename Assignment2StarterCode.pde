@@ -59,6 +59,10 @@ void draw() {
 		button.draw();
 	}
 	
+	println(
+		collider(players.get(0), players.get(1)).size()
+	);
+	
 	map.draw();
 }
 

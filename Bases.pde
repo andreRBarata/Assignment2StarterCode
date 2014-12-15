@@ -144,19 +144,19 @@ class Drawable {
 
 boolean inLine(PVector point, PVector[] line) {
 	return  (
-			(x > max(line[0].x, line[1].x)) &&
-			(x < min(line[0].x, line[1].x))
+			(point.x < max(line[0].x, line[1].x)) &&
+			(point.x > min(line[0].x, line[1].x))
 		);	
 }
 
 PVector intersectionLines(PVector[] line1, PVector[] line2) {
 	float m1 = (
-		line1[0].y - line1[1].y /
-		line1[0].x - line1[1].x
+		(line1[0].y - line1[1].y) /
+		(line1[0].x - line1[1].x)
 	);
 	float m2 = (
-		line2[0].y - line2[1].y /
-		line2[0].x - line2[1].x
+		(line2[0].y - line2[1].y) /
+		(line2[0].x - line2[1].x)
 	);
 
 	if (m1 != m2) {
@@ -186,12 +186,11 @@ PVector intersectionLines(PVector[] line1, PVector[] line2) {
 }
 
 Shape collider(Drawable p1, Drawable p2) {
-	Shape shapeInSpace1 = (Shape)(p1.shape).clone();
-	Shape shapeInSpace2 = (Shape)(p2.shape).clone();
+	Shape shapeInSpace1 = (Shape)(p1.shape)
+		.transpose(p1.position);
+	Shape shapeInSpace2 = (Shape)(p2.shape)
+		.transpose(p2.position);
 	Shape intersection = new Shape();
-	
-	shapeInSpace1.transpose(p1.position);
-	shapeInSpace2.transpose(p2.position);
 	
 	for (int i = 0; i < shapeInSpace1.size(); i++) {
 		for (int e = 0; e < shapeInSpace2.size(); e++) {
@@ -204,12 +203,15 @@ Shape collider(Drawable p1, Drawable p2) {
 					shapeInSpace1.get(nextIndex1)
 				},
 				new PVector[] {
-					shapeInSpace2.get(i),
+					shapeInSpace2.get(e),
 					shapeInSpace2.get(nextIndex2)
 				}
 			);
 			
 			if (intersectionPoint != null) {
+				line(0, intersectionPoint.y, width, intersectionPoint.y);
+				line(intersectionPoint.x, 0, intersectionPoint.x, height);
+			
 				intersection.add(intersectionPoint);
 			}
 		}

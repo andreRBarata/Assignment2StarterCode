@@ -1,4 +1,4 @@
-class Player extends Drawable {
+class Player extends Droppable {
 	TreeMap<String, Character> keyBinds;
 	int index;
 	color colour;
@@ -57,16 +57,16 @@ class Player extends Drawable {
 	
 	void update() {
 		if (checkKey(keyBinds.get("up"))) {
-			position.y -= 1;
+			speed.y -= 2;
 		}
 		if (checkKey(keyBinds.get("down"))) {
-			position.y += 1;
+			speed.y += 2;
 		}
 		if (checkKey(keyBinds.get("left"))) {
-			position.x -= 1;
+			speed.x -= 2;
 		}    
 		if (checkKey(keyBinds.get("right"))) {
-			position.x += 1;
+			speed.x += 2;
 		}
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
