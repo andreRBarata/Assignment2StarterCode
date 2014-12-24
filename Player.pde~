@@ -57,16 +57,16 @@ class Player extends Droppable {
 	
 	void update() {
 		if (checkKey(keyBinds.get("up"))) {
-			speed.y -= 3;
+			speed.y -= 2;
 		}
 		if (checkKey(keyBinds.get("down"))) {
-			speed.y += 3;
+			speed.y += 2;
 		}
 		if (checkKey(keyBinds.get("left"))) {
-			speed.x -= 3;
+			speed.x -= 2;
 		}    
 		if (checkKey(keyBinds.get("right"))) {
-			speed.x += 3;
+			speed.x += 2;
 		}
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");

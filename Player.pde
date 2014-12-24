@@ -39,7 +39,7 @@ class Player extends Droppable {
 			"button1",
 			"button2"
 		};
-		
+
 		for (String key: keys) {
 			this.keyBinds.put(
 				key,

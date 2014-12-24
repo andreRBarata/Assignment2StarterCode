@@ -71,6 +71,30 @@ class Shape extends ArrayList<PVector> {
 		return shape;
 	}
 	
+	PVector highestX() {
+		PVector highest = new PVector();
+		
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x > highest.x) {
+				highest = this.get(i);
+			}
+		}
+		
+		return highest;
+	}
+	
+	PVector lowestX() {
+		PVector lowest = new PVector();
+		
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x < lowest.x) {
+				lowest = this.get(i);
+			}
+		}
+		
+		return lowest;
+	}
+	
 	float maxWidth() {
 		float minWidth = 0;
 		float maxWidth = 0;
@@ -149,30 +173,58 @@ boolean inLine(PVector point, PVector[] line) {
 		);	
 }
 
-PVector intersectionLines(PVector[] line1, PVector[] line2) {
-	float m1 = (
-		(line1[0].y - line1[1].y) /
-		(line1[0].x - line1[1].x)
+float lineSlope(PVector[] line) {
+	return (
+		(line[1].y - line[0].y) /
+		(line[1].x - line[0].x)
 	);
-	float m2 = (
-		(line2[0].y - line2[1].y) /
-		(line2[0].x - line2[1].x)
-	);
+}
 
-	if (m1 != m2) {
-		float b1 = line1[0].y - m1 * line1[0].x;
+PVector getIntersection(PVector[] line1, PVector[] line2) {
+	float m1 = lineSlope(line1);
+	float m2 = lineSlope(line2);
+
+	if (Float.isNaN(m1)) {
 		float b2 = line2[0].y - m2 * line2[0].x;
 		
-		float x = (
-			(b2 - b1) / (m1 - m2)
+		return new PVector(
+			line1[0].x,
+			m2 * line1[0].x + b2
 		);
-		float y = m1 * x + b1;
+	}
+	else if (Float.isNaN(m2)) {
+		float b1 = line1[0].y - m2 * line1[0].x;
 		
-		PVector intersection = new PVector(
-			x,
-			y
+		return new PVector(
+			line2[0].x,
+			m1 * line2[0].x + b1
 		);
+	}
+	else {
+		if (m1 != m2) {
+			float b1 = line1[0].y - m1 * line1[0].x;
+			float b2 = line2[0].y - m2 * line2[0].x;
 		
+			float x = (
+				(b2 - b1) / (m1 - m2)
+			);
+			float y = m1 * x + b1;
+		
+			return new PVector(
+				x,
+				y
+			);
+		}
+		else {
+			return null;
+		}
+	}
+}
+
+PVector intersectionInline(PVector[] line1, PVector[] line2) {
+	PVector intersection = getIntersection(line1, line2);
+	
+	if (intersection != null) {	
 		if (inLine(intersection, line1) && inLine(intersection, line2)) {
 			return intersection;
 		}
@@ -185,7 +237,14 @@ PVector intersectionLines(PVector[] line1, PVector[] line2) {
 	}
 }
 
-Shape collider(Drawable p1, Drawable p2) {
+float lineAngle(PVector[] line1, PVector[] line2) {
+	return atan2((line2[1].y - line2[0].y), (line2[1].x - line2[0].x)) -
+		atan2((line1[1].y - line1[0].y), (line1[1].x - line1[0].x))
+	);
+}
+
+Poligon collider(Drawable p1, Drawable p2) {
+	Poligon toReturn = new Poligon();
 	Shape shapeInSpace1 = (Shape)(p1.shape)
 		.transpose(p1.position);
 	Shape shapeInSpace2 = (Shape)(p2.shape)
@@ -194,18 +253,22 @@ Shape collider(Drawable p1, Drawable p2) {
 	
 	for (int i = 0; i < shapeInSpace1.size(); i++) {
 		for (int e = 0; e < shapeInSpace2.size(); e++) {
-			int nextIndex1 = (i + 1) % shapeInSpace1.size();
-			int nextIndex2 = (e + 1) % shapeInSpace2.size();
+			PVector[] line1 = {
+				shapeInSpace1.get(i),
+				shapeInSpace1.get(
+					(i + 1) % shapeInSpace1.size()
+				)
+			};
+			PVector[] line2 = {
+				shapeInSpace2.get(e),
+				shapeInSpace2.get(
+					(e + 1) % shapeInSpace2.size()
+				)
+			};
 		
-			PVector intersectionPoint = intersectionLines(
-				new PVector[] {
-					shapeInSpace1.get(i),
-					shapeInSpace1.get(nextIndex1)
-				},
-				new PVector[] {
-					shapeInSpace2.get(i),
-					shapeInSpace2.get(nextIndex2)
-				}
+			PVector intersectionPoint = intersectionInline(
+				line1,
+				line2
 			);
 			
 			if (intersectionPoint != null) {
@@ -213,9 +276,14 @@ Shape collider(Drawable p1, Drawable p2) {
 				line(intersectionPoint.x, 0, intersectionPoint.x, height);
 			
 				intersection.add(intersectionPoint);
+				toReturn.put("obj1_line", new Shape(line1));
+				toReturn.put("obj2_line", new Shape(line2));
 			}
 		}
 	}
 	
-	return intersection;
+	toReturn.put("intersection", intersection);
+	
+	
+	return toReturn;
 }

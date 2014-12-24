@@ -16,11 +16,11 @@ boolean[] keys = new boolean[526];
 void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
-	size(700, 500);
+	size(500, 500);
 	
 	shapes();
 	drawMap();
-
+	
 	background(255);
 	setUpPlayerControllers();
 	
@@ -59,10 +59,6 @@ void draw() {
 		button.draw();
 	}
 	
-	println(
-		collider(players.get(0), players.get(0)).size()
-	);
-	
 	map.draw();
 }
 
@@ -70,7 +66,7 @@ void drawMap() {
 	Shape shape = new Shape();
 	PVector point = new PVector(0,0);
 	float theta = 0;
-	float thetaInc = TWO_PI / 10000;
+	float thetaInc = TWO_PI / 500;
 	float noiseScale = 0.2;
 
 	while (theta - PI < HALF_PI) {
@@ -89,9 +85,13 @@ void drawMap() {
 		theta += thetaInc;
 	}
 	
+	/*shape.add(new PVector(-width/2, height/2));
+	shape.add(new PVector(width/2, -height/2));*/
+	
 	map = new Drawable(
-		new PVector(width/2,height/2),
-		shape.scale(70)
+		new PVector(width/2,height + 800),
+		//new PVector(width/2, height/2),
+		shape.scale(80)
 	);
 }
 
@@ -139,7 +139,7 @@ void setUpPlayerControllers() {
 		);
 		int x = (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = 300;
+		p.position.y = 50;
 		players.add(p);         
 	}
 }

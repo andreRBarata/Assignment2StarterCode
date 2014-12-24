@@ -38,7 +38,7 @@ public void setup() {
 	
 	shapes();
 	drawMap();
-
+	
 	background(255);
 	setUpPlayerControllers();
 	
@@ -77,10 +77,6 @@ public void draw() {
 		button.draw();
 	}
 	
-	println(
-		collider(players.get(0), players.get(1)).size()
-	);
-	
 	map.draw();
 }
 
@@ -88,7 +84,7 @@ public void drawMap() {
 	Shape shape = new Shape();
 	PVector point = new PVector(0,0);
 	float theta = 0;
-	float thetaInc = TWO_PI / 10000;
+	float thetaInc = TWO_PI / 500;
 	float noiseScale = 0.2f;
 
 	while (theta - PI < HALF_PI) {
@@ -107,9 +103,13 @@ public void drawMap() {
 		theta += thetaInc;
 	}
 	
+	/*shape.add(new PVector(-width/2, height/2));
+	shape.add(new PVector(width/2, -height/2));*/
+	
 	map = new Drawable(
-		new PVector(width/2,height/2),
-		shape.scale(70)
+		new PVector(width/2,height + 800),
+		//new PVector(width/2, height/2),
+		shape.scale(80)
 	);
 }
 
@@ -157,7 +157,7 @@ public void setUpPlayerControllers() {
 		);
 		int x = (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = 300;
+		p.position.y = 50;
 		players.add(p);         
 	}
 }
@@ -255,6 +255,30 @@ class Shape extends ArrayList<PVector> {
 		return shape;
 	}
 	
+	public PVector highestX() {
+		PVector highest = new PVector();
+		
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x > highest.x) {
+				highest = this.get(i);
+			}
+		}
+		
+		return highest;
+	}
+	
+	public PVector lowestX() {
+		PVector lowest = new PVector();
+		
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x < lowest.x) {
+				lowest = this.get(i);
+			}
+		}
+		
+		return lowest;
+	}
+	
 	public float maxWidth() {
 		float minWidth = 0;
 		float maxWidth = 0;
@@ -333,30 +357,58 @@ public boolean inLine(PVector point, PVector[] line) {
 		);	
 }
 
-public PVector intersectionLines(PVector[] line1, PVector[] line2) {
-	float m1 = (
-		(line1[0].y - line1[1].y) /
-		(line1[0].x - line1[1].x)
+public float lineSlope(PVector[] line) {
+	return (
+		(line[1].y - line[0].y) /
+		(line[1].x - line[0].x)
 	);
-	float m2 = (
-		(line2[0].y - line2[1].y) /
-		(line2[0].x - line2[1].x)
-	);
+}
 
-	if (m1 != m2) {
-		float b1 = line1[0].y - m1 * line1[0].x;
+public PVector getIntersection(PVector[] line1, PVector[] line2) {
+	float m1 = lineSlope(line1);
+	float m2 = lineSlope(line2);
+
+	if (Float.isNaN(m1)) {
 		float b2 = line2[0].y - m2 * line2[0].x;
 		
-		float x = (
-			(b2 - b1) / (m1 - m2)
+		return new PVector(
+			line1[0].x,
+			m2 * line1[0].x + b2
 		);
-		float y = m1 * x + b1;
+	}
+	else if (Float.isNaN(m2)) {
+		float b1 = line1[0].y - m2 * line1[0].x;
 		
-		PVector intersection = new PVector(
-			x,
-			y
+		return new PVector(
+			line2[0].x,
+			m1 * line2[0].x + b1
 		);
+	}
+	else {
+		if (m1 != m2) {
+			float b1 = line1[0].y - m1 * line1[0].x;
+			float b2 = line2[0].y - m2 * line2[0].x;
 		
+			float x = (
+				(b2 - b1) / (m1 - m2)
+			);
+			float y = m1 * x + b1;
+		
+			return new PVector(
+				x,
+				y
+			);
+		}
+		else {
+			return null;
+		}
+	}
+}
+
+public PVector intersectionInline(PVector[] line1, PVector[] line2) {
+	PVector intersection = getIntersection(line1, line2);
+	
+	if (intersection != null) {	
 		if (inLine(intersection, line1) && inLine(intersection, line2)) {
 			return intersection;
 		}
@@ -369,7 +421,15 @@ public PVector intersectionLines(PVector[] line1, PVector[] line2) {
 	}
 }
 
-public Shape collider(Drawable p1, Drawable p2) {
+public float lineAngle(PVector[] line1, PVector[] line2) {
+	return (
+		atan2((line2[1].y - line2[0].y), (line2[1].x - line2[0].x)) -
+		atan2((line1[1].y - line1[0].y), (line1[1].x - line1[0].x))
+	);
+}
+
+public Poligon collider(Drawable p1, Drawable p2) {
+	Poligon toReturn = new Poligon();
 	Shape shapeInSpace1 = (Shape)(p1.shape)
 		.transpose(p1.position);
 	Shape shapeInSpace2 = (Shape)(p2.shape)
@@ -378,18 +438,22 @@ public Shape collider(Drawable p1, Drawable p2) {
 	
 	for (int i = 0; i < shapeInSpace1.size(); i++) {
 		for (int e = 0; e < shapeInSpace2.size(); e++) {
-			int nextIndex1 = (i + 1) % shapeInSpace1.size();
-			int nextIndex2 = (e + 1) % shapeInSpace2.size();
+			PVector[] line1 = {
+				shapeInSpace1.get(i),
+				shapeInSpace1.get(
+					(i + 1) % shapeInSpace1.size()
+				)
+			};
+			PVector[] line2 = {
+				shapeInSpace2.get(e),
+				shapeInSpace2.get(
+					(e + 1) % shapeInSpace2.size()
+				)
+			};
 		
-			PVector intersectionPoint = intersectionLines(
-				new PVector[] {
-					shapeInSpace1.get(i),
-					shapeInSpace1.get(nextIndex1)
-				},
-				new PVector[] {
-					shapeInSpace2.get(e),
-					shapeInSpace2.get(nextIndex2)
-				}
+			PVector intersectionPoint = intersectionInline(
+				line1,
+				line2
 			);
 			
 			if (intersectionPoint != null) {
@@ -397,11 +461,16 @@ public Shape collider(Drawable p1, Drawable p2) {
 				line(intersectionPoint.x, 0, intersectionPoint.x, height);
 			
 				intersection.add(intersectionPoint);
+				toReturn.put("obj1_line", new Shape(line1));
+				toReturn.put("obj2_line", new Shape(line2));
 			}
 		}
 	}
 	
-	return intersection;
+	toReturn.put("intersection", intersection);
+	
+	
+	return toReturn;
 }
 class Button extends Drawable {
 	CallBack callback;
@@ -444,14 +513,66 @@ class Droppable extends Drawable {
 	}
 	
 	public void draw() {
-		this.position.add(this.speed);
-		if (this.speed.x > 0) {
-			this.speed.x--;
-		}
-		else if (this.speed.x < 0) {
-			this.speed.x++;
+		Poligon collision = collider(this, map);
+		
+		if (collision.get("intersection").size() > 1) {
+			PVector old_position = this.position.get();
+			old_position.sub(this.speed);
+			PVector edgeVector = collision
+				.get("obj2_line")
+				.get(1)
+				.get();
+				
+			edgeVector.sub(
+				collision
+					.get("obj2_line")
+					.get(0)
+			);
+		
+			println("speedBefore:", this.speed);
+		
+			float baseAngle = lineAngle(
+				collision
+					.get("obj2_line")
+					.toArray(new PVector[2]),
+				new PVector[] {
+					new PVector(0,0),
+					new PVector(1,0)
+				}
+			);
+			
+			println("baseAngle:", baseAngle);
+			
+			float magnitude = speed.mag();
+			float angle = lineAngle(
+				new PVector[] {
+					old_position,
+					this.position
+				},
+				collision
+					.get("obj2_line")
+					.toArray(new PVector[2])
+			);
+
+			if (angle != -1) {
+				float angletmp = PI - angle + baseAngle;
+				
+				println("Angle tmp:", angletmp);
+				
+				this.speed = PVector.fromAngle(
+					angletmp
+				);
+				speed.mult(magnitude/1.1f);
+				println("speedAfter:", this.speed);
+			} else	{
+				println("speed was unchanged:", this.speed);
+			}		
+
 		}
 		
+		this.speed.y += 3.1f/60;
+		this.position.add(this.speed);
+
 		super.draw();
 	}
 }
@@ -496,7 +617,7 @@ class Player extends Droppable {
 			"button1",
 			"button2"
 		};
-		
+
 		for (String key: keys) {
 			this.keyBinds.put(
 				key,
