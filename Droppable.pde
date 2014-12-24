@@ -54,14 +54,15 @@ class Droppable extends Drawable {
 					PI - angle + baseAngle
 				);
 				speed.mult(magnitude);
-				println("speedAfter:", this.speed);
-			} else	{
-				println("speed was unchanged:", this.speed);
 			}		
 
 		}
 		
-		this.speed.y += 3.1/60;
+		this.speed.y += cos(
+			atan2(map.position.x, map.position.y) -
+				atan2(this.position.x, this.position.y)
+		) * 9.1/frameRate;
+		
 		this.position.add(this.speed);
 
 		super.draw();

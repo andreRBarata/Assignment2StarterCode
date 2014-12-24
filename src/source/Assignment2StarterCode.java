@@ -555,22 +555,20 @@ class Droppable extends Drawable {
 			);
 
 			if (angle != -1) {
-				float angletmp = PI - angle + baseAngle;
-				
-				println("Angle tmp:", angletmp);
-				
+		
 				this.speed = PVector.fromAngle(
-					angletmp
+					PI - angle + baseAngle
 				);
-				speed.mult(magnitude/1.1f);
-				println("speedAfter:", this.speed);
-			} else	{
-				println("speed was unchanged:", this.speed);
+				speed.mult(magnitude);
 			}		
 
 		}
 		
-		this.speed.y += 3.1f/60;
+		this.speed.y += cos(
+			atan2(map.position.x, map.position.y) -
+				atan2(this.position.x, this.position.y)
+		) * 9.1f/frameRate;
+		
 		this.position.add(this.speed);
 
 		super.draw();
