@@ -52,21 +52,19 @@ class Player extends Droppable {
 	void draw() {
 		stroke(colour);
 		
-		super.draw();
+		super.display();
 	}
 	
-	void update() {
+	void update() {		
 		if (checkKey(keyBinds.get("up"))) {
-			speed.y -= 2;
+			spin += HALF_PI;
 		}
 		if (checkKey(keyBinds.get("down"))) {
-			speed.y += 2;
-		}
-		if (checkKey(keyBinds.get("left"))) {
-			speed.x -= 2;
-		}    
+			spin -= HALF_PI;
+		}  
 		if (checkKey(keyBinds.get("right"))) {
-			speed.x += 2;
+			speed.x -= (HALF_PI - cos(spin));
+			speed.y -= (HALF_PI - sin(spin));
 		}
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
@@ -76,6 +74,8 @@ class Player extends Droppable {
 		}
 		if (checkKey(keyBinds.get("button2"))) {
 			println("Player " + index + " button 2");
-		}    
+		}
+		
+		super.update();    
 	}
 }

@@ -16,7 +16,6 @@ void shapes() {
 		new PVector[] {
 			new PVector(0,-10),
 			new PVector(-10,10),
-			new PVector(-10,10),
 			new PVector(10,10)
 		}
 	);

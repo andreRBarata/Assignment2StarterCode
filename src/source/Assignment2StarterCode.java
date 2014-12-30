@@ -25,6 +25,10 @@ public class Assignment2StarterCode extends PApplet {
 */
 
 
+float gravity;
+float planetScale;
+float hillsize;
+
 Drawable map;
 
 ArrayList<Player> players;
@@ -35,60 +39,62 @@ public void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
 	size(700, 500);
+
+	gravity = 5;
+	planetScale = 900;
+	hillsize = 5;
 	
-	shapes();
-	drawMap();
+	Poligons();
+	createMap();
 	
 	background(255);
 	setUpPlayerControllers();
-	
-	Button button = new Button(
-		new PVector(width/2, height/2),
-		"button",
-		rectangle
-			.scale(
-				new PVector(2.5f, 1)
-			)
-			.transpose(
-				new PVector(25,10)
-			),
-		new CallBack() {
-			public void run() {
-				println("teste");
-			}
-		}
-	);
-	
-	buttons.add(button);
 }
 
 public void draw() {
 	background(255);
 	
+	pushMatrix();
+	translate(
+		width/2, height + planetScale -10
+	);
+	rotate(
+		PI - (atan2(players.get(0).position.y, players.get(0).position.x) -
+			atan2(map.position.y, map.position.x)) + HALF_PI
+	);
+	
+	stroke(0);
+	
+	map.display();
+	
+	fill(255,255,0);
+	
 	for(Player player: players) {
 		stroke(0);
 		player.update();
-		player.draw();
+		player.display();
 	}
+	
+	fill(0);
 	
 	for (int i = 0; i < buttons.size(); i++) {
 		stroke(0);
 		Button button = buttons.get(i);
-		button.draw();
+		button.display();
 	}
 	
-	map.draw();
+	popMatrix();
 }
 
-public void drawMap() {
-	Shape shape = new Shape();
+public void createMap() {
+	Poligon Poligon = new Poligon();
 	PVector point = new PVector(0,0);
 	float theta = 0;
 	float thetaInc = TWO_PI / 500;
-	float noiseScale = 0.2f;
+	float noiseScale = 0.1f;
 
 	while (theta - PI < HALF_PI) {
-		float radius = 10 + 3 * noise(	
+		float radius = 10 + hillsize * noise(	
 			noiseScale * point.x, 
 			noiseScale * point.y
 		);
@@ -98,18 +104,15 @@ public void drawMap() {
 	    		cos(theta) * radius
 	    	);
 		
-		shape.add(point);
+		Poligon.add(point);
 		
 		theta += thetaInc;
 	}
 	
-	/*shape.add(new PVector(-width/2, height/2));
-	shape.add(new PVector(width/2, -height/2));*/
-	
 	map = new Drawable(
-		new PVector(width/2,height + 800),
+		new PVector(0,0),
 		//new PVector(width/2, height/2),
-		shape.scale(80)
+		Poligon.scale(planetScale / 10)
 	);
 }
 
@@ -155,25 +158,25 @@ public void setUpPlayerControllers() {
 			color(random(0, 255), random(0, 255), random(0, 255)),
 			playerXML
 		);
-		int x = (i + 1) * gap;
+		int x = width/2 - (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = 50;
-		players.add(p);         
+		p.position.y = planetScale + hillsize * 100 + 50;
+		players.add(p);
 	}
 }
 
-public void mousePressed() {
+/*void mousePressed() {
 	for (int i = 0; i < buttons.size(); i++) {
 		Button button = buttons.get(i);
 		
-		if (mouseX > button.position.x && mouseX < button.position.x + button.shape.maxWidth()) {
-			if (mouseY > button.position.y && mouseY < button.position.y + button.shape.maxHeight()) {
+		if (mouseX > button.position.x && mouseX < button.position.x + button.Poligon.maxWidth()) {
+			if (mouseY > button.position.y && mouseY < button.position.y + button.Poligon.maxHeight()) {
 				button.clicked = true;
 				button.callback.run();
 			}
 		}
 	}
-}
+}*/
 
 public void mouseReleased() {
 	for (int i = 0; i < buttons.size(); i++) {
@@ -182,172 +185,61 @@ public void mouseReleased() {
 		button.clicked = false;
 	}
 }
+Poligon rectangle;
+Poligon triangle;
+Poligon circle;
+
+public void Poligons() {
+	rectangle = new Poligon(
+		new PVector[] {
+			new PVector(-10,-10),
+			new PVector(10,-10),
+			new PVector(10,10),
+			new PVector(-10,10)
+		}
+	);
+	
+	triangle = new Poligon(
+		new PVector[] {
+			new PVector(0,-10),
+			new PVector(-10,10),
+			new PVector(10,10)
+		}
+	);
+	
+	float theta = 0;
+	float thetaInc = TWO_PI / 10;
+	circle = new Poligon();
+	while (theta < TWO_PI) {
+		circle.add(
+			new PVector(
+		    		sin(theta) * 10,
+		    		cos(theta) * 10
+		    	)
+		);
+		
+		theta += thetaInc;
+	}
+}
 interface CallBack {
 	public void run();
 }
 
+interface Vectorial {
+	public void draw();
+	public int size();
+
+	public PVector[] getLine(int i);
+	public PVector center();
+	public float getRadius();
+	public int lineCount();
+
+	public Vectorial transpose(PVector val);
+	public Vectorial rotate(float degrees);
+}
+
 public boolean isNull(Object o1, Object o2) {
 	return (o1 == null || o2 == null);
-}
-
-class Shape extends ArrayList<PVector> {
-	
-	Shape() {
-		super();
-	}
-	
-	Shape(Shape shape) {
-		super(shape);
-	}
-	
-	Shape(PVector[] shape) {
-		super(Arrays.asList(shape));
-	}
-	
-	public Shape clone() {
-		Shape shape = new Shape();
-		
-		for (PVector point: this) {
-			shape.add(point.get());
-		}
-		
-		return shape;
-	}
-	
-	public Shape rotate(float degrees) {
-		Shape shape = (Shape)this.clone();
-		
-		for (int i = 0; i < shape.size(); i++) {
-			shape.get(i).rotate(degrees);
-		}
-		
-		return shape;
-	}
-	
-	public Shape transpose(PVector val) {
-		Shape shape = (Shape)this.clone();
-		
-		for (int i = 0; i < shape.size(); i++) {
-			shape.get(i).add(val);
-		}
-		
-		return shape;
-	}
-	
-	public Shape scale(PVector val) {
-		Shape shape = (Shape)this.clone();
-	
-		for (int i = 0; i < shape.size(); i++) {
-			shape.get(i).x *= val.x;
-			shape.get(i).y *= val.y;
-		}
-		
-		return shape;
-	}
-	
-	public Shape scale(float val) {
-		Shape shape = (Shape)this.clone();
-	
-		for (int i = 0; i < shape.size(); i++) {
-			shape.get(i).mult(val);
-		}
-		
-		return shape;
-	}
-	
-	public PVector highestX() {
-		PVector highest = new PVector();
-		
-		for (int i = 0; i < this.size(); i++) {
-			if (i == 0 || this.get(i).x > highest.x) {
-				highest = this.get(i);
-			}
-		}
-		
-		return highest;
-	}
-	
-	public PVector lowestX() {
-		PVector lowest = new PVector();
-		
-		for (int i = 0; i < this.size(); i++) {
-			if (i == 0 || this.get(i).x < lowest.x) {
-				lowest = this.get(i);
-			}
-		}
-		
-		return lowest;
-	}
-	
-	public float maxWidth() {
-		float minWidth = 0;
-		float maxWidth = 0;
-		for (int i = 0; i < this.size(); i++) {
-			if (i == 0 || this.get(i).x > maxWidth) {
-				maxWidth = this.get(i).x;
-			}
-			
-			if (i == 0 || this.get(i).x < minWidth) {
-				minWidth = this.get(i).x;
-			}
-		}
-		
-		return maxWidth - minWidth;
-	}
-	
-	public float maxHeight() {
-		float minHeight = 0;
-		float maxHeight = 0;
-		for (int i = 0; i < this.size(); i++) {
-			if (i == 0 || this.get(i).y > maxHeight) {
-				maxHeight = this.get(i).y;
-			}
-			
-			if (i == 0 || this.get(i).y < minHeight) {
-				minHeight = this.get(i).y;
-			}
-		}
-		
-		return maxHeight - minHeight;
-	}
-}
-
-class Drawable {
-	PVector position;
-	Shape shape;
-	
-	Drawable(PVector position, Shape shape) {
-		this.position = position;
-		this.shape = shape;
-	}
-	
-	public void draw() {
-		int i = 0;
-
-		Shape shapeInSpace = shape.transpose(position);
-
-		while (i < shape.size()) {
-			PVector current1;
-			PVector current2;
-			
-			current1 = shapeInSpace.get(
-				i % shape.size()
-			);	
-			
-			i++;
-
-			current2 = shapeInSpace.get(
-				i % shape.size()
-			);
-			
-			line(
-				current1.x,
-				current1.y,
-				current2.x,
-				current2.y
-			);
-		}
-	}
 }
 
 public boolean inLine(PVector point, PVector[] line) {
@@ -428,41 +320,28 @@ public float lineAngle(PVector[] line1, PVector[] line2) {
 	);
 }
 
-public Poligon collider(Drawable p1, Drawable p2) {
-	Poligon toReturn = new Poligon();
-	Shape shapeInSpace1 = (Shape)(p1.shape)
+public Shape collider(Drawable p1, Drawable p2) {
+	Shape toReturn = new Shape();
+	Vectorial spriteInSpace1 = p1.sprite
 		.transpose(p1.position);
-	Shape shapeInSpace2 = (Shape)(p2.shape)
+	Vectorial spriteInSpace2 = p2.sprite
 		.transpose(p2.position);
-	Shape intersection = new Shape();
+	Poligon intersection = new Poligon();
 	
-	for (int i = 0; i < shapeInSpace1.size(); i++) {
-		for (int e = 0; e < shapeInSpace2.size(); e++) {
-			PVector[] line1 = {
-				shapeInSpace1.get(i),
-				shapeInSpace1.get(
-					(i + 1) % shapeInSpace1.size()
-				)
-			};
-			PVector[] line2 = {
-				shapeInSpace2.get(e),
-				shapeInSpace2.get(
-					(e + 1) % shapeInSpace2.size()
-				)
-			};
-		
+	for (int i = 0; i < spriteInSpace1.size(); i++) {
+		for (int e = 0; e < spriteInSpace2.size(); e++) {
+			PVector[] line1 = spriteInSpace1.getLine(i);
+			PVector[] line2 = spriteInSpace2.getLine(e);
+				
 			PVector intersectionPoint = intersectionInline(
 				line1,
 				line2
 			);
 			
 			if (intersectionPoint != null) {
-				line(0, intersectionPoint.y, width, intersectionPoint.y);
-				line(intersectionPoint.x, 0, intersectionPoint.x, height);
-			
 				intersection.add(intersectionPoint);
-				toReturn.put("obj1_line", new Shape(line1));
-				toReturn.put("obj2_line", new Shape(line2));
+				toReturn.put("obj1_line", new Poligon(line1));
+				toReturn.put("obj2_line", new Poligon(line2));
 			}
 		}
 	}
@@ -472,23 +351,44 @@ public Poligon collider(Drawable p1, Drawable p2) {
 	
 	return toReturn;
 }
+/*
+	Button button = new Button(
+		new PVector(width/2, height/2),
+		"button",
+		rectangle
+			.scale(
+				new PVector(2.5, 1)
+			)
+			.transpose(
+				new PVector(25,10)
+			),
+		new CallBack() {
+			public void run() {
+				println("teste");
+			}
+		}
+	);
+
+	buttons.add(button);
+*/
+
 class Button extends Drawable {
 	CallBack callback;
 	boolean clicked;
 	String text;
 	
-	Button(PVector position, String text, Shape shape, CallBack callback) {
-		super(position, shape);
+	Button(PVector position, String text, Poligon Poligon, CallBack callback) {
+		super(position, Poligon);
 		
 		this.clicked = false;
 		this.callback = callback;
 		this.text = text;
 	}
 	
-	public void draw() {
+	/*void draw() {
 		fill(color(255));
 
-		super.draw();
+		super.display();
 		
 		if (!clicked) {
 			fill(color(0));
@@ -499,21 +399,41 @@ class Button extends Drawable {
 		
 		text(
 			text,
-			position.x + this.shape.maxWidth()/2 - textWidth(text)/2,
-			position.y + (this.shape.maxHeight() + 10)/2
+			position.x + this.Poligon.maxWidth()/2 - textWidth(text)/2,
+			position.y + (this.Poligon.maxHeight() + 10)/2
 		);
+	}*/
+}
+class Drawable {
+	PVector position;
+	Vectorial sprite;
+	
+	Drawable(PVector position, Vectorial sprite) {
+		this.position = position;
+		this.sprite = sprite;
+	}
+	
+	public void display() {
+		Vectorial spriteInSpace = sprite.transpose(position);
+
+		spriteInSpace.draw();
 	}
 }
 class Droppable extends Drawable {
 	PVector speed;
+	boolean colliding;
+	float spin;
+	float momentum;
 	
-	Droppable(PVector position, Shape shape) {
-		super(position, shape);
-		speed = new PVector(0,0);
+	Droppable(PVector position, Poligon Poligon) {
+		super(position, Poligon);
+		this.speed = new PVector(0,0);
+		this.colliding = false;
+		this.momentum = 0;
 	}
 	
-	public void draw() {
-		Poligon collision = collider(this, map);
+	public void update() {
+		Shape collision = collider(this, map);
 		
 		if (collision.get("intersection").size() > 1) {
 			PVector old_position = this.position.get();
@@ -528,9 +448,7 @@ class Droppable extends Drawable {
 					.get("obj2_line")
 					.get(0)
 			);
-		
-			println("speedBefore:", this.speed);
-		
+			
 			float baseAngle = lineAngle(
 				collision
 					.get("obj2_line")
@@ -541,9 +459,7 @@ class Droppable extends Drawable {
 				}
 			);
 			
-			println("baseAngle:", baseAngle);
-			
-			float magnitude = speed.mag();
+			float magnitude = speed.mag()/1.5f;
 			float angle = lineAngle(
 				new PVector[] {
 					old_position,
@@ -554,24 +470,58 @@ class Droppable extends Drawable {
 					.toArray(new PVector[2])
 			);
 
-			if (angle != -1) {
-		
+			if (angle != -1 && !colliding) {
+				Vectorial spriteInSpace = this
+					.sprite
+					.transpose(
+						position
+					);
+				PVector transfer = PVector.sub(
+						spriteInSpace.center(),
+						collision
+							.get("intersection")
+							.center()
+					).cross(this.speed);
+				
+				this.spin += (
+					transfer.mag()/(
+						TWO_PI * spriteInSpace.getRadius()
+					)
+				);
+				this.spin *= 0.5f;
+				this.speed.sub(transfer);
+			
 				this.speed = PVector.fromAngle(
 					PI - angle + baseAngle
 				);
 				speed.mult(magnitude);
-			}		
-
+				
+				colliding = true;
+			}
+			else {
+				colliding = false;
+			}
+		}
+		else {
+			colliding = false;
+			
+			this.speed.x -= sin(
+				HALF_PI + atan2(this.position.y, this.position.x) -
+					atan2(map.position.y, map.position.x)
+			) * (gravity/frameRate);
+		
+			this.speed.y += cos(
+				HALF_PI + atan2(this.position.y, this.position.x) -
+					atan2(map.position.y, map.position.x)
+			) * (gravity/frameRate);
 		}
 		
-		this.speed.y += cos(
-			atan2(map.position.x, map.position.y) -
-				atan2(this.position.x, this.position.y)
-		) * 9.1f/frameRate;
-		
 		this.position.add(this.speed);
+		
+		this.sprite = this.sprite.rotate(
+			spin *= 0.95f
+		);
 
-		super.draw();
 	}
 }
 class Player extends Droppable {
@@ -628,21 +578,19 @@ class Player extends Droppable {
 	public void draw() {
 		stroke(colour);
 		
-		super.draw();
+		super.display();
 	}
 	
-	public void update() {
+	public void update() {		
 		if (checkKey(keyBinds.get("up"))) {
-			speed.y -= 2;
+			spin += HALF_PI;
 		}
 		if (checkKey(keyBinds.get("down"))) {
-			speed.y += 2;
-		}
-		if (checkKey(keyBinds.get("left"))) {
-			speed.x -= 2;
-		}    
+			spin -= HALF_PI;
+		}  
 		if (checkKey(keyBinds.get("right"))) {
-			speed.x += 2;
+			speed.x -= (HALF_PI - cos(spin));
+			speed.y -= (HALF_PI - sin(spin));
 		}
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
@@ -652,46 +600,344 @@ class Player extends Droppable {
 		}
 		if (checkKey(keyBinds.get("button2"))) {
 			println("Player " + index + " button 2");
-		}    
+		}
+		
+		super.update();    
 	}
 }
-class Poligon extends TreeMap<String,Shape> {
-
-}
-Shape rectangle;
-Shape triangle;
-Shape circle;
-
-public void shapes() {
-	rectangle = new Shape(
-		new PVector[] {
-			new PVector(-10,-10),
-			new PVector(10,-10),
-			new PVector(10,10),
-			new PVector(-10,10)
-		}
-	);
+class Poligon extends ArrayList<PVector> implements Vectorial {
 	
-	triangle = new Shape(
-		new PVector[] {
-			new PVector(0,-10),
-			new PVector(-10,10),
-			new PVector(10,10)
-		}
-	);
+	Poligon() {
+		super();
+	}
 	
-	float theta = 0;
-	float thetaInc = TWO_PI / 10;
-	circle = new Shape();
-	while (theta < TWO_PI) {
-		circle.add(
-			new PVector(
-		    		sin(theta) * 10,
-		    		cos(theta) * 10
-		    	)
-		);
+	Poligon(Poligon Poligon) {
+		super(Poligon);
+	}
+	
+	Poligon(PVector[] Poligon) {
+		super(Arrays.asList(Poligon));
+	}
+	
+	public int lineCount() {
+		return this.size();
+	}
+	
+	public float getRadius() {
+		float total = 0;
+		PVector center = this.center();
 		
-		theta += thetaInc;
+		for (int i = 0; i < this.size(); i++) {
+			total += PVector.dist(center, this.get(i));
+		}
+		
+		return total/this.size();
+	}
+	
+	public void draw() {
+		beginShape();
+		
+		for (int i = 0; i < this.size(); i++) {
+			vertex(
+				this.get(i).x,
+				this.get(i).y
+			);
+		}
+
+		endShape(CLOSE);
+	}
+	
+	public PVector[] getLine(int i) {
+		return new PVector[] {
+			this.get(i),
+			this.get((i + 1) % this.size())
+		};
+	}
+	
+	public Poligon clone() {
+		Poligon Poligon = new Poligon();
+		
+		for (PVector point: this) {
+			Poligon.add(point.get());
+		}
+		
+		return Poligon;
+	}
+	
+	public PVector center() {
+		float sumx = 0;
+		float sumy = 0;
+		
+		for (int i = 0; i < this.size(); i++) {
+			sumx += this.get(i).x;
+			sumy += this.get(i).y;
+		}
+		
+		return new PVector(
+			sumx / this.size(),
+			sumy / this.size()
+		);
+	}
+	
+	public Poligon merge(Poligon merge) {
+		Poligon Poligon = (Poligon)this.clone();
+	
+		for (int i = 0; i < Poligon.size(); i++) {
+			for (int e = 0; e < merge.size(); e++) {
+				if (Poligon.get(i) == merge.get(e)) {
+					if (e + 1 < merge.size()) {
+						Poligon.add(i + 1, Poligon.get(e));
+					}
+				}
+			}
+		}
+		
+		return Poligon;	
+	}
+	
+	public Poligon rotate(float degrees) {
+		Poligon Poligon = (Poligon)this.clone();
+		
+		for (int i = 0; i < Poligon.size(); i++) {
+			Poligon.get(i).rotate(degrees);
+		}
+		
+		return Poligon;
+	}
+	
+	public Poligon transpose(PVector val) {
+		Poligon Poligon = (Poligon)this.clone();
+		
+		for (int i = 0; i < Poligon.size(); i++) {
+			Poligon.get(i).add(val);
+		}
+		
+		return Poligon;
+	}
+	
+	public Poligon scale(PVector val) {
+		Poligon Poligon = (Poligon)this.clone();
+	
+		for (int i = 0; i < Poligon.size(); i++) {
+			Poligon.get(i).x *= val.x;
+			Poligon.get(i).y *= val.y;
+		}
+		
+		return Poligon;
+	}
+	
+	public Poligon scale(float val) {
+		Poligon Poligon = (Poligon)this.clone();
+	
+		for (int i = 0; i < Poligon.size(); i++) {
+			Poligon.get(i).mult(val);
+		}
+		
+		return Poligon;
+	}
+	
+	public PVector highestX() {
+		PVector highest = new PVector();
+		
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x > highest.x) {
+				highest = this.get(i);
+			}
+		}
+		
+		return highest;
+	}
+	
+	public PVector lowestX() {
+		PVector lowest = new PVector();
+		
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x < lowest.x) {
+				lowest = this.get(i);
+			}
+		}
+		
+		return lowest;
+	}
+	
+	public float maxWidth() {
+		float minWidth = 0;
+		float maxWidth = 0;
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).x > maxWidth) {
+				maxWidth = this.get(i).x;
+			}
+			
+			if (i == 0 || this.get(i).x < minWidth) {
+				minWidth = this.get(i).x;
+			}
+		}
+		
+		return maxWidth - minWidth;
+	}
+	
+	public float maxHeight() {
+		float minHeight = 0;
+		float maxHeight = 0;
+		for (int i = 0; i < this.size(); i++) {
+			if (i == 0 || this.get(i).y > maxHeight) {
+				maxHeight = this.get(i).y;
+			}
+			
+			if (i == 0 || this.get(i).y < minHeight) {
+				minHeight = this.get(i).y;
+			}
+		}
+		
+		return maxHeight - minHeight;
+	}
+}
+class Shape extends TreeMap<String,Poligon> implements Vectorial {
+	
+	public Shape clone() {
+		Shape shape = new Shape();
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+		
+		for (int i = 0; i < this.size(); i++) {
+			shape.put(
+				new String((String) keys[i]),
+				this.get(keys[i]).clone()
+			);
+		}
+		
+		return shape;
+	}
+	
+	public PVector center() {
+		float sumx = 0;
+		float sumy = 0;
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+	
+		for (int i = 0; i < keys.length; i++) {
+			PVector center = this.get(keys[i]).center();
+		
+			sumx += center.x;
+			sumy += center.y;
+		}
+		
+		return new PVector(
+			sumx/this.size(),
+			sumy/this.size()	
+		);
+	}
+	
+	public int lineCount() {
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+
+		int size = 0;
+	
+		for (int i = 0; i < keys.length; i++) {
+			size += this.get(keys[i]).size();
+		}
+		
+		return size;
+	}
+	
+	public float getRadius() {
+		PVector center = this.center();
+		float total = 0;
+		
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+	
+		for (int i = 0; i < keys.length; i++) {	
+			total += PVector.dist(
+				this.get(keys[i]).center(),
+				center
+			);
+		}
+		
+		return total/this.size();
+	}
+	
+	public Shape transpose(PVector val) {
+		Shape shape = this.clone();
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+	
+		for (int i = 0; i < keys.length; i++) {
+			shape.get(keys[i]).transpose(val);
+		}
+		
+		return shape;
+	}
+	
+	public Shape rotate(float degrees) {
+		Shape shape = this.clone();
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+	
+		for (int i = 0; i < keys.length; i++) {
+			shape.get(keys[i]).rotate(degrees);
+		}
+		
+		return shape;
+	}
+	
+	public void draw() {
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+	
+		for (int i = 0; i < keys.length; i++) {
+			this.get(keys[i]).draw();
+		}
+	}
+	
+	public PVector[] getLine(int i) {
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+		int e = 0;
+		PVector[] line = new PVector[2];
+		
+		while (i > this.get(keys[e]).lineCount()) {
+			if (i <= this.get(keys[e]).lineCount()) {
+				Poligon poligon = this.get(keys[e]);
+			
+				line = new PVector[] {
+					poligon.get(i),
+					poligon.get((i + 1) % this.lineCount())
+				};
+			}
+			else {
+			
+			}
+		
+			e++;
+		}
+		
+		return line;
 	}
 }
   static public void main(String[] passedArgs) {

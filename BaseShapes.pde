@@ -1,9 +1,9 @@
-Shape rectangle;
-Shape triangle;
-Shape circle;
+Poligon rectangle;
+Poligon triangle;
+Poligon circle;
 
-void shapes() {
-	rectangle = new Shape(
+void Poligons() {
+	rectangle = new Poligon(
 		new PVector[] {
 			new PVector(-10,-10),
 			new PVector(10,-10),
@@ -12,7 +12,7 @@ void shapes() {
 		}
 	);
 	
-	triangle = new Shape(
+	triangle = new Poligon(
 		new PVector[] {
 			new PVector(0,-10),
 			new PVector(-10,10),
@@ -22,7 +22,7 @@ void shapes() {
 	
 	float theta = 0;
 	float thetaInc = TWO_PI / 10;
-	circle = new Shape();
+	circle = new Poligon();
 	while (theta < TWO_PI) {
 		circle.add(
 			new PVector(

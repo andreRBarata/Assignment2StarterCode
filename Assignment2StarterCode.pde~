@@ -7,6 +7,10 @@
 */
 import java.util.*;
 
+float gravity;
+float planetScale;
+float hillsize;
+
 Drawable map;
 
 ArrayList<Player> players;
@@ -16,61 +20,63 @@ boolean[] keys = new boolean[526];
 void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
-	size(500, 500);
+	size(700, 500);
+
+	gravity = 5;
+	planetScale = 900;
+	hillsize = 5;
 	
-	shapes();
-	drawMap();
+	Poligons();
+	createMap();
 	
 	background(255);
 	setUpPlayerControllers();
-	
-	Button button = new Button(
-		new PVector(width/2, height/2),
-		"button",
-		rectangle
-			.scale(
-				new PVector(2.5, 1)
-			)
-			.transpose(
-				new PVector(25,10)
-			),
-		new CallBack() {
-			public void run() {
-				println("teste");
-			}
-		}
-	);
-	
-	buttons.add(button);
 }
 
 void draw() {
 	background(255);
 	
+	pushMatrix();
+	translate(
+		width/2, height + planetScale -10
+	);
+	rotate(
+		PI - (atan2(players.get(0).position.y, players.get(0).position.x) -
+			atan2(map.position.y, map.position.x)) + HALF_PI
+	);
+	
+	stroke(0);
+	
+	map.display();
+	
+	fill(255,255,0);
+	
 	for(Player player: players) {
 		stroke(0);
 		player.update();
-		player.draw();
+		player.display();
 	}
+	
+	fill(0);
 	
 	for (int i = 0; i < buttons.size(); i++) {
 		stroke(0);
 		Button button = buttons.get(i);
-		button.draw();
+		button.display();
 	}
 	
-	map.draw();
+	popMatrix();
 }
 
-void drawMap() {
-	Shape shape = new Shape();
+void createMap() {
+	Poligon Poligon = new Poligon();
 	PVector point = new PVector(0,0);
 	float theta = 0;
 	float thetaInc = TWO_PI / 500;
-	float noiseScale = 0.2;
+	float noiseScale = 0.1;
 
 	while (theta - PI < HALF_PI) {
-		float radius = 10 + 3 * noise(	
+		float radius = 10 + hillsize * noise(	
 			noiseScale * point.x, 
 			noiseScale * point.y
 		);
@@ -80,18 +86,15 @@ void drawMap() {
 	    		cos(theta) * radius
 	    	);
 		
-		shape.add(point);
+		Poligon.add(point);
 		
 		theta += thetaInc;
 	}
 	
-	/*shape.add(new PVector(-width/2, height/2));
-	shape.add(new PVector(width/2, -height/2));*/
-	
 	map = new Drawable(
-		new PVector(width/2,height + 800),
+		new PVector(0,0),
 		//new PVector(width/2, height/2),
-		shape.scale(80)
+		Poligon.scale(planetScale / 10)
 	);
 }
 
@@ -137,10 +140,10 @@ void setUpPlayerControllers() {
 			color(random(0, 255), random(0, 255), random(0, 255)),
 			playerXML
 		);
-		int x = (i + 1) * gap;
+		int x = width/2 - (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = 50;
-		players.add(p);         
+		p.position.y = planetScale + hillsize * 100 + 50;
+		players.add(p);
 	}
 }
 
@@ -148,8 +151,8 @@ void mousePressed() {
 	for (int i = 0; i < buttons.size(); i++) {
 		Button button = buttons.get(i);
 		
-		if (mouseX > button.position.x && mouseX < button.position.x + button.shape.maxWidth()) {
-			if (mouseY > button.position.y && mouseY < button.position.y + button.shape.maxHeight()) {
+		if (mouseX > button.position.x && mouseX < button.position.x + button.Poligon.maxWidth()) {
+			if (mouseY > button.position.y && mouseY < button.position.y + button.Poligon.maxHeight()) {
 				button.clicked = true;
 				button.callback.run();
 			}
