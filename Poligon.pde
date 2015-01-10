@@ -4,12 +4,12 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		super();
 	}
 	
-	Poligon(Poligon Poligon) {
-		super(Poligon);
+	Poligon(Poligon poligon) {
+		super(poligon);
 	}
 	
-	Poligon(PVector[] Poligon) {
-		super(Arrays.asList(Poligon));
+	Poligon(PVector[] poligon) {
+		super(Arrays.asList(poligon));
 	}
 	
 	int lineCount() {
@@ -48,13 +48,13 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	}
 	
 	Poligon clone() {
-		Poligon Poligon = new Poligon();
+		Poligon poligon = new Poligon();
 		
 		for (PVector point: this) {
-			Poligon.add(point.get());
+			poligon.add(point.get());
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	PVector center() {
@@ -73,60 +73,85 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	}
 	
 	Poligon merge(Poligon merge) {
-		Poligon Poligon = (Poligon)this.clone();
-	
-		for (int i = 0; i < Poligon.size(); i++) {
-			for (int e = 0; e < merge.size(); e++) {
-				if (Poligon.get(i) == merge.get(e)) {
-					if (e + 1 < merge.size()) {
-						Poligon.add(i + 1, Poligon.get(e));
-					}
+		Poligon poligon = new Poligon();
+		Poligon ori1 = this.clone();
+		Poligon ori2 = merge.clone();
+		
+		PVector coords = ori1.get(0);
+		
+		println("new poligon");
+		
+		while (coords != null) {
+			println(coords);
+			poligon.add(coords);
+			ori1.remove(coords);
+			
+			if (ori2.contains(coords) || ori1.size() == 0) {
+				Poligon tmp = ori1;
+				
+				ori2.remove(coords);
+				
+				ori1 = ori2;
+				ori2 = tmp;
+				Collections.rotate(ori1, ori1.indexOf(coords));
+				
+				if (ori2.contains(coords) && ori2.contains(ori1.get(0))) {
+					Collections.reverse(ori1);
 				}
+			}
+			
+			if (ori1.size() > 0) {
+				coords = ori1.get(0);
+			}
+			else {
+				coords = null;
 			}
 		}
 		
-		return Poligon;	
+		return poligon;	
 	}
 	
 	Poligon rotate(float degrees) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 		
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).rotate(degrees);
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).rotate(degrees);
+			poligon.get(i).x = round(poligon.get(i).x);
+			poligon.get(i).y = round(poligon.get(i).y);
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	Poligon transpose(PVector val) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 		
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).add(val);
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).add(val);
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	Poligon scale(PVector val) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 	
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).x *= val.x;
-			Poligon.get(i).y *= val.y;
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).x *= val.x;
+			poligon.get(i).y *= val.y;
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	Poligon scale(float val) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 	
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).mult(val);
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).mult(val);
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	PVector highestX() {

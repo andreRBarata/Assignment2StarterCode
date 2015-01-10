@@ -111,7 +111,6 @@ public void createMap() {
 	
 	map = new Drawable(
 		new PVector(0,0),
-		//new PVector(width/2, height/2),
 		Poligon.scale(planetScale / 10)
 	);
 }
@@ -160,7 +159,7 @@ public void setUpPlayerControllers() {
 		);
 		int x = width/2 - (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = planetScale + hillsize * 100 + 50;
+		p.position.y = planetScale + hillsize * 200 + 50;
 		players.add(p);
 	}
 }
@@ -251,6 +250,8 @@ public boolean inLine(PVector point, PVector[] line) {
 
 public float lineSlope(PVector[] line) {
 	return (
+
+
 		(line[1].y - line[0].y) /
 		(line[1].x - line[0].x)
 	);
@@ -259,7 +260,7 @@ public float lineSlope(PVector[] line) {
 public PVector getIntersection(PVector[] line1, PVector[] line2) {
 	float m1 = lineSlope(line1);
 	float m2 = lineSlope(line2);
-
+	
 	if (Float.isNaN(m1)) {
 		float b2 = line2[0].y - m2 * line2[0].x;
 		
@@ -328,11 +329,12 @@ public Shape collider(Drawable p1, Drawable p2) {
 		.transpose(p2.position);
 	Poligon intersection = new Poligon();
 	
-	for (int i = 0; i < spriteInSpace1.size(); i++) {
-		for (int e = 0; e < spriteInSpace2.size(); e++) {
-			PVector[] line1 = spriteInSpace1.getLine(i);
+	for (int i = 0; i < spriteInSpace1.lineCount(); i++) {
+		PVector[] line1 = spriteInSpace1.getLine(i);
+	
+		for (int e = 0; e < spriteInSpace2.lineCount(); e++) {
 			PVector[] line2 = spriteInSpace2.getLine(e);
-				
+
 			PVector intersectionPoint = intersectionInline(
 				line1,
 				line2
@@ -415,7 +417,7 @@ class Drawable {
 	
 	public void display() {
 		Vectorial spriteInSpace = sprite.transpose(position);
-
+		
 		spriteInSpace.draw();
 	}
 }
@@ -425,8 +427,8 @@ class Droppable extends Drawable {
 	float spin;
 	float momentum;
 	
-	Droppable(PVector position, Poligon Poligon) {
-		super(position, Poligon);
+	Droppable(PVector position, Vectorial sprite) {
+		super(position, sprite);
 		this.speed = new PVector(0,0);
 		this.colliding = false;
 		this.momentum = 0;
@@ -476,6 +478,7 @@ class Droppable extends Drawable {
 					.transpose(
 						position
 					);
+					
 				PVector transfer = PVector.sub(
 						spriteInSpace.center(),
 						collision
@@ -483,22 +486,22 @@ class Droppable extends Drawable {
 							.center()
 					).cross(this.speed);
 				
-				this.spin += (
+				this.spin -= (
 					transfer.mag()/(
 						TWO_PI * spriteInSpace.getRadius()
 					)
 				);
 				this.spin *= 0.5f;
-				this.speed.sub(transfer);
+				this.speed.add(transfer);
 			
 				this.speed = PVector.fromAngle(
 					PI - angle + baseAngle
 				);
 				speed.mult(magnitude);
 				
-				colliding = true;
+				//colliding = true;
 			}
-			else {
+			else if (angle != -1) {
 				colliding = false;
 			}
 		}
@@ -532,7 +535,35 @@ class Player extends Droppable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			triangle.scale(1.5f)
+			new Shape().add("windows",
+					triangle
+						.transpose(
+							new PVector(0,10)
+						)
+						.merge(
+							triangle
+								.rotate(PI)
+								.transpose(
+									new PVector(10,10)
+								)
+						)
+						.merge(
+							triangle
+								.rotate(PI)
+								.transpose(
+									new PVector(-10,10)
+								)
+						)
+			)
+			.add(
+				"body", rectangle
+						.transpose(
+							new PVector(0,-10)
+						)
+						.scale(
+							new PVector(3,1)
+						)
+			)
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}
@@ -574,8 +605,7 @@ class Player extends Droppable {
 		}
 	}
 	
-	
-	public void draw() {
+	public void display() {
 		stroke(colour);
 		
 		super.display();
@@ -611,12 +641,12 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		super();
 	}
 	
-	Poligon(Poligon Poligon) {
-		super(Poligon);
+	Poligon(Poligon poligon) {
+		super(poligon);
 	}
 	
-	Poligon(PVector[] Poligon) {
-		super(Arrays.asList(Poligon));
+	Poligon(PVector[] poligon) {
+		super(Arrays.asList(poligon));
 	}
 	
 	public int lineCount() {
@@ -655,13 +685,13 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	}
 	
 	public Poligon clone() {
-		Poligon Poligon = new Poligon();
+		Poligon poligon = new Poligon();
 		
 		for (PVector point: this) {
-			Poligon.add(point.get());
+			poligon.add(point.get());
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	public PVector center() {
@@ -680,60 +710,86 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	}
 	
 	public Poligon merge(Poligon merge) {
-		Poligon Poligon = (Poligon)this.clone();
-	
-		for (int i = 0; i < Poligon.size(); i++) {
-			for (int e = 0; e < merge.size(); e++) {
-				if (Poligon.get(i) == merge.get(e)) {
-					if (e + 1 < merge.size()) {
-						Poligon.add(i + 1, Poligon.get(e));
-					}
+		Poligon poligon = new Poligon();
+		Poligon ori1 = this.clone();
+		Poligon ori2 = merge.clone();
+		
+		PVector coords = ori1.get(0);
+		
+		println("new poligon");
+		
+		while (coords != null) {
+			println(coords);
+			poligon.add(coords);
+			ori1.remove(coords);
+			
+			if (ori2.contains(coords) || ori1.size() == 0) {
+				Poligon tmp = ori1;
+				
+				ori2.remove(coords);
+				
+				ori1 = ori2;
+				ori2 = tmp;
+				Collections.rotate(ori1, ori1.indexOf(coords));
+				
+				if (ori2.contains(coords) && ori2.contains(ori1.get(0))) {
+					Collections.reverse(ori1);
 				}
+				
+			}
+			
+			if (ori1.size() > 0) {
+				coords = ori1.get(0);
+			}
+			else {
+				coords = null;
 			}
 		}
 		
-		return Poligon;	
+		return poligon;	
 	}
 	
 	public Poligon rotate(float degrees) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 		
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).rotate(degrees);
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).rotate(degrees);
+			poligon.get(i).x = round(poligon.get(i).x);
+			poligon.get(i).y = round(poligon.get(i).y);
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	public Poligon transpose(PVector val) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 		
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).add(val);
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).add(val);
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	public Poligon scale(PVector val) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 	
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).x *= val.x;
-			Poligon.get(i).y *= val.y;
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).x *= val.x;
+			poligon.get(i).y *= val.y;
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	public Poligon scale(float val) {
-		Poligon Poligon = (Poligon)this.clone();
+		Poligon poligon = (Poligon)this.clone();
 	
-		for (int i = 0; i < Poligon.size(); i++) {
-			Poligon.get(i).mult(val);
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).mult(val);
 		}
 		
-		return Poligon;
+		return poligon;
 	}
 	
 	public PVector highestX() {
@@ -796,20 +852,21 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	
 	public Shape clone() {
 		Shape shape = new Shape();
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 		
-		for (int i = 0; i < this.size(); i++) {
+		for (String key: this.keySet()) {
 			shape.put(
-				new String((String) keys[i]),
-				this.get(keys[i]).clone()
+				new String((String) key),
+				this.get(key).clone()
 			);
 		}
 		
 		return shape;
+	}
+	
+	public Shape add(String key, Poligon poligon) {
+		super.put(key, poligon);
+		
+		return this;
 	}
 	
 	public PVector center() {
@@ -835,16 +892,10 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	public int lineCount() {
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
-
 		int size = 0;
-	
-		for (int i = 0; i < keys.length; i++) {
-			size += this.get(keys[i]).size();
+
+		for (String key: this.keySet()) {
+			size += this.get(key).lineCount();
 		}
 		
 		return size;
@@ -853,16 +904,10 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	public float getRadius() {
 		PVector center = this.center();
 		float total = 0;
-		
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 	
-		for (int i = 0; i < keys.length; i++) {	
+		for (String key: this.keySet()) {	
 			total += PVector.dist(
-				this.get(keys[i]).center(),
+				this.get(key).center(),
 				center
 			);
 		}
@@ -872,14 +917,9 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	
 	public Shape transpose(PVector val) {
 		Shape shape = this.clone();
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 	
-		for (int i = 0; i < keys.length; i++) {
-			shape.get(keys[i]).transpose(val);
+		for (String key: this.keySet()) {
+			shape.put(key, shape.get(key).transpose(val));
 		}
 		
 		return shape;
@@ -887,28 +927,18 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	
 	public Shape rotate(float degrees) {
 		Shape shape = this.clone();
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 	
-		for (int i = 0; i < keys.length; i++) {
-			shape.get(keys[i]).rotate(degrees);
+		for (String key: this.keySet()) {
+			shape.get(key).rotate(degrees);
 		}
 		
 		return shape;
 	}
 	
 	public void draw() {
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
-	
-		for (int i = 0; i < keys.length; i++) {
-			this.get(keys[i]).draw();
+		
+		for (String key: this.keySet()) {
+			this.get(key).draw();
 		}
 	}
 	
@@ -919,25 +949,21 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 				new String[this.size()]
 			);
 		int e = 0;
-		PVector[] line = new PVector[2];
 		
-		while (i > this.get(keys[e]).lineCount()) {
-			if (i <= this.get(keys[e]).lineCount()) {
-				Poligon poligon = this.get(keys[e]);
-			
-				line = new PVector[] {
-					poligon.get(i),
-					poligon.get((i + 1) % this.lineCount())
-				};
-			}
-			else {
-			
-			}
-		
+		while (e < this.size() && i >= this.get(keys[e]).size()) {
+			i -= this.get(keys[e]).lineCount();
 			e++;
 		}
 		
-		return line;
+		
+		if (i < this.get(keys[e]).size()) {
+			Poligon poligon = this.get(keys[e]);
+		
+			return poligon.getLine(i);
+		}
+		else {
+			return null;
+		}
 	}
 }
   static public void main(String[] passedArgs) {

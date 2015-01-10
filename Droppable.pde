@@ -4,8 +4,8 @@ class Droppable extends Drawable {
 	float spin;
 	float momentum;
 	
-	Droppable(PVector position, Poligon Poligon) {
-		super(position, Poligon);
+	Droppable(PVector position, Vectorial sprite) {
+		super(position, sprite);
 		this.speed = new PVector(0,0);
 		this.colliding = false;
 		this.momentum = 0;
@@ -55,6 +55,7 @@ class Droppable extends Drawable {
 					.transpose(
 						position
 					);
+					
 				PVector transfer = PVector.sub(
 						spriteInSpace.center(),
 						collision
@@ -62,22 +63,22 @@ class Droppable extends Drawable {
 							.center()
 					).cross(this.speed);
 				
-				this.spin += (
+				this.spin -= (
 					transfer.mag()/(
 						TWO_PI * spriteInSpace.getRadius()
 					)
 				);
 				this.spin *= 0.5;
-				this.speed.sub(transfer);
+				this.speed.add(transfer);
 			
 				this.speed = PVector.fromAngle(
 					PI - angle + baseAngle
 				);
 				speed.mult(magnitude);
 				
-				colliding = true;
+				//colliding = true;
 			}
-			else {
+			else if (angle != -1) {
 				colliding = false;
 			}
 		}

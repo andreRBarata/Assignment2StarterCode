@@ -93,7 +93,6 @@ void createMap() {
 	
 	map = new Drawable(
 		new PVector(0,0),
-		//new PVector(width/2, height/2),
 		Poligon.scale(planetScale / 10)
 	);
 }
@@ -142,7 +141,7 @@ void setUpPlayerControllers() {
 		);
 		int x = width/2 - (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = planetScale + hillsize * 100 + 50;
+		p.position.y = planetScale + hillsize * 200 + 50;
 		players.add(p);
 	}
 }

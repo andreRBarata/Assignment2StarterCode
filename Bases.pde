@@ -28,6 +28,8 @@ boolean inLine(PVector point, PVector[] line) {
 
 float lineSlope(PVector[] line) {
 	return (
+
+
 		(line[1].y - line[0].y) /
 		(line[1].x - line[0].x)
 	);
@@ -36,7 +38,7 @@ float lineSlope(PVector[] line) {
 PVector getIntersection(PVector[] line1, PVector[] line2) {
 	float m1 = lineSlope(line1);
 	float m2 = lineSlope(line2);
-
+	
 	if (Float.isNaN(m1)) {
 		float b2 = line2[0].y - m2 * line2[0].x;
 		
@@ -105,11 +107,12 @@ Shape collider(Drawable p1, Drawable p2) {
 		.transpose(p2.position);
 	Poligon intersection = new Poligon();
 	
-	for (int i = 0; i < spriteInSpace1.size(); i++) {
-		for (int e = 0; e < spriteInSpace2.size(); e++) {
-			PVector[] line1 = spriteInSpace1.getLine(i);
+	for (int i = 0; i < spriteInSpace1.lineCount(); i++) {
+		PVector[] line1 = spriteInSpace1.getLine(i);
+	
+		for (int e = 0; e < spriteInSpace2.lineCount(); e++) {
 			PVector[] line2 = spriteInSpace2.getLine(e);
-				
+
 			PVector intersectionPoint = intersectionInline(
 				line1,
 				line2

@@ -9,7 +9,7 @@ class Drawable {
 	
 	void display() {
 		Vectorial spriteInSpace = sprite.transpose(position);
-
-		poligonInSpace.draw();
+		println("teste");
+		spriteInSpace.draw();
 	}
 }

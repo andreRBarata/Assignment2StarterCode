@@ -2,20 +2,21 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	
 	Shape clone() {
 		Shape shape = new Shape();
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 		
-		for (int i = 0; i < this.size(); i++) {
+		for (String key: this.keySet()) {
 			shape.put(
-				new String((String) keys[i]),
-				this.get(keys[i]).clone()
+				new String((String) key),
+				this.get(key).clone()
 			);
 		}
 		
 		return shape;
+	}
+	
+	Shape add(String key, Poligon poligon) {
+		super.put(key, poligon);
+		
+		return this;
 	}
 	
 	PVector center() {
@@ -41,16 +42,10 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	int lineCount() {
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
-
 		int size = 0;
-	
-		for (int i = 0; i < keys.length; i++) {
-			size += this.get(keys[i]).size();
+
+		for (String key: this.keySet()) {
+			size += this.get(key).lineCount();
 		}
 		
 		return size;
@@ -59,16 +54,10 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	float getRadius() {
 		PVector center = this.center();
 		float total = 0;
-		
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 	
-		for (int i = 0; i < keys.length; i++) {	
+		for (String key: this.keySet()) {	
 			total += PVector.dist(
-				this.get(keys[i]).center(),
+				this.get(key).center(),
 				center
 			);
 		}
@@ -78,14 +67,9 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	
 	Shape transpose(PVector val) {
 		Shape shape = this.clone();
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 	
-		for (int i = 0; i < keys.length; i++) {
-			shape.get(keys[i]).transpose(val);
+		for (String key: this.keySet()) {
+			shape.put(key, shape.get(key).transpose(val));
 		}
 		
 		return shape;
@@ -93,28 +77,18 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	
 	Shape rotate(float degrees) {
 		Shape shape = this.clone();
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
 	
-		for (int i = 0; i < keys.length; i++) {
-			shape.get(keys[i]).rotate(degrees);
+		for (String key: this.keySet()) {
+			shape.get(key).rotate(degrees);
 		}
 		
 		return shape;
 	}
 	
 	void draw() {
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
-	
-		for (int i = 0; i < keys.length; i++) {
-			this.get(keys[i]).draw();
+		
+		for (String key: this.keySet()) {
+			this.get(key).draw();
 		}
 	}
 	
@@ -125,24 +99,20 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 				new String[this.size()]
 			);
 		int e = 0;
-		PVector[] line = new PVector[2];
 		
-		while (i > this.get(keys[e]).lineCount()) {
-			if (i <= this.get(keys[e]).lineCount()) {
-				Poligon poligon = this.get(keys[e]);
-			
-				line = new PVector[] {
-					poligon.get(i),
-					poligon.get((i + 1) % this.lineCount())
-				};
-			}
-			else {
-			
-			}
-		
+		while (e < this.size() && i >= this.get(keys[e]).size()) {
+			i -= this.get(keys[e]).lineCount();
 			e++;
 		}
 		
-		return line;
+		
+		if (i < this.get(keys[e]).size()) {
+			Poligon poligon = this.get(keys[e]);
+		
+			return poligon.getLine(i);
+		}
+		else {
+			return null;
+		}
 	}
 }
