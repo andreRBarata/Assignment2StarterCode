@@ -5,14 +5,18 @@ interface CallBack {
 interface Vectorial {
 	public void draw();
 	public int size();
+	public Vectorial clone();
 
 	public PVector[] getLine(int i);
 	public PVector center();
 	public float getRadius();
+	public float getArea();
 	public int lineCount();
 
 	public Vectorial transpose(PVector val);
 	public Vectorial rotate(float degrees);
+	public Vectorial scale(float val);
+	public Vectorial scale(PVector val);
 }
 
 boolean isNull(Object o1, Object o2) {
@@ -112,6 +116,35 @@ Shape collider(Drawable p1, Drawable p2) {
 	
 		for (int e = 0; e < spriteInSpace2.lineCount(); e++) {
 			PVector[] line2 = spriteInSpace2.getLine(e);
+
+			PVector intersectionPoint = intersectionInline(
+				line1,
+				line2
+			);
+			
+			if (intersectionPoint != null) {
+				intersection.add(intersectionPoint);
+				toReturn.put("obj1_line", new Poligon(line1));
+				toReturn.put("obj2_line", new Poligon(line2));
+			}
+		}
+	}
+	
+	toReturn.put("intersection", intersection);
+	
+	
+	return toReturn;
+}
+
+Shape collider(Vectorial p1, Vectorial p2) {
+	Shape toReturn = new Shape();
+	Poligon intersection = new Poligon();
+	
+	for (int i = 0; i < p1.lineCount(); i++) {
+		PVector[] line1 = p1.getLine(i);
+	
+		for (int e = 0; e < p2.lineCount(); e++) {
+			PVector[] line2 = p2.getLine(e);
 
 			PVector intersectionPoint = intersectionInline(
 				line1,

@@ -10,6 +10,9 @@ import java.util.*;
 float gravity;
 float planetScale;
 float hillsize;
+float spinradius;
+float movementspeed;
+float minimapscale;
 
 Drawable map;
 
@@ -22,9 +25,12 @@ void setup() {
 	buttons = new ArrayList<Button>();
 	size(700, 500);
 
-	gravity = 5;
-	planetScale = 900;
-	hillsize = 5;
+	gravity = 8;
+	planetScale = 1100;
+	hillsize = 550;
+	spinradius = 1000;
+	movementspeed = 2;
+	minimapscale = 60;
 	
 	Poligons();
 	createMap();
@@ -34,66 +40,121 @@ void setup() {
 }
 
 void draw() {
+	PVector avgPlayer = new PVector();
+	Drawable minimap = (Drawable)map.clone();
+	
 	background(255);
 	
+	for (Player player: players) {
+		avgPlayer.add(player.position);
+	}
+	
+	avgPlayer.div(players.size());
+
+	//Game map processing		
 	pushMatrix();
-	translate(
-		width/2, height + planetScale -10
-	);
-	rotate(
-		PI - (atan2(players.get(0).position.y, players.get(0).position.x) -
-			atan2(map.position.y, map.position.x)) + HALF_PI
-	);
 	
-	stroke(0);
+		translate(
+			width/2, height/2 + avgPlayer.y
+		);
+		rotate(
+			PI - (atan2(avgPlayer.y, avgPlayer.x) -
+				atan2(map.position.y, map.position.x)) + HALF_PI
+		);
 	
-	map.display();
-	
-	fill(255,255,0);
-	
-	for(Player player: players) {
 		stroke(0);
-		player.update();
-		player.display();
-	}
+		fill(139,69,19);
+		map.display();
 	
-	fill(0);
+		for(Player player: players) {
+			player.update();
+			player.display();
+		}
 	
-	for (int i = 0; i < buttons.size(); i++) {
-		stroke(0);
-		Button button = buttons.get(i);
-		button.display();
-	}
+		fill(0);
+	
+		for (int i = 0; i < buttons.size(); i++) {
+			stroke(0);
+			Button button = buttons.get(i);
+			button.display();
+		}
 	
 	popMatrix();
+	
+	minimap.sprite = minimap
+		.sprite
+		.rotate(
+			PI - (atan2(avgPlayer.y, avgPlayer.x) -
+				atan2(map.position.y, map.position.x)) + HALF_PI
+		)
+		.scale(minimapscale/planetScale);
+
+	minimap.position = new PVector(
+		width - (minimapscale + 20),
+		(minimapscale + 20)
+	);
+	
+	for (Player player: players) {
+		PVector location = minimap
+			.position
+			.get();
+			
+		location.sub(
+			PVector.mult(
+				player.position,
+				minimapscale
+			)
+		);
+		
+		println(location);
+			
+		ellipse(location.x, location.y, 10, 10);
+	}
+	
+	fill(255);
+	stroke(0);
+	minimap.display();
 }
 
 void createMap() {
-	Poligon Poligon = new Poligon();
+	Poligon poligon = new Poligon();
 	PVector point = new PVector(0,0);
 	float theta = 0;
-	float thetaInc = TWO_PI / 500;
-	float noiseScale = 0.1;
+	float thetaInc = TWO_PI / 350;
+	float noiseScale = 0.0029;
+	int start = 0;
 
-	while (theta - PI < HALF_PI) {
-		float radius = 10 + hillsize * noise(	
+	while (theta < TWO_PI) {
+		float radius = planetScale + hillsize * noise(	
 			noiseScale * point.x, 
 			noiseScale * point.y
-		);
+		) * start;
+		
+		if (start == 0) {
+			radius += hillsize/2;
+		}
 		
 		point = new PVector(
 			sin(theta) * radius,
 	    		cos(theta) * radius
 	    	);
 		
-		Poligon.add(point);
+		poligon.add(point);
 		
 		theta += thetaInc;
+		
+		if (theta > HALF_PI/6) {
+			start = 1;
+		}
+		
+		if (theta > TWO_PI - HALF_PI/6) {
+			start = 0;
+		}
 	}
 	
 	map = new Drawable(
 		new PVector(0,0),
-		Poligon.scale(planetScale / 10)
+		poligon
 	);
 }
 
@@ -141,7 +202,7 @@ void setUpPlayerControllers() {
 		);
 		int x = width/2 - (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = planetScale + hillsize * 200 + 50;
+		p.position.y = planetScale + hillsize + 100;
 		players.add(p);
 	}
 }

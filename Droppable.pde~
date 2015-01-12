@@ -2,12 +2,15 @@ class Droppable extends Drawable {
 	PVector speed;
 	boolean colliding;
 	float spin;
+	float spinoffset;
 	float momentum;
 	
 	Droppable(PVector position, Vectorial sprite) {
 		super(position, sprite);
 		this.speed = new PVector(0,0);
 		this.colliding = false;
+		this.spin = 0;
+		this.spinoffset = 0;
 		this.momentum = 0;
 	}
 	
@@ -49,7 +52,7 @@ class Droppable extends Drawable {
 					.toArray(new PVector[2])
 			);
 
-			if (angle != -1 && !colliding) {
+			if (angle != -1) {
 				Vectorial spriteInSpace = this
 					.sprite
 					.transpose(
@@ -64,43 +67,57 @@ class Droppable extends Drawable {
 					).cross(this.speed);
 				
 				this.spin -= (
-					transfer.mag()/(
-						TWO_PI * spriteInSpace.getRadius()
+					(
+						transfer.mag()/(
+							TWO_PI * spriteInSpace.getRadius() * spinradius
+						)
 					)
 				);
-				this.spin *= 0.5;
-				this.speed.add(transfer);
-			
-				this.speed = PVector.fromAngle(
-					PI - angle + baseAngle
-				);
-				speed.mult(magnitude);
 				
-				//colliding = true;
+				this.spin *= 0.5;
+				
+				this.speed = PVector.fromAngle(
+					lineAngle(
+						collision
+							.get("obj1_line")
+							.toArray(new PVector[2]),
+						collision
+							.get("obj2_line")
+							.toArray(new PVector[2])
+					) - HALF_PI
+				);
+				
+				/*this.speed = PVector.fromAngle(
+					PI - (angle + baseAngle)
+				);*/
+				
+				this.speed.mult(magnitude);
+				
+				colliding = true;
 			}
-			else if (angle != -1) {
+			else {
 				colliding = false;
 			}
 		}
 		else {
-			colliding = false;
-			
-			this.speed.x -= sin(
-				HALF_PI + atan2(this.position.y, this.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
-		
-			this.speed.y += cos(
-				HALF_PI + atan2(this.position.y, this.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
+			colliding = false;	
 		}
+		
+		this.speed.x -= sin(
+			HALF_PI + atan2(this.position.y, this.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
+	
+		this.speed.y += cos(
+			HALF_PI + atan2(this.position.y, this.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
 		
 		this.position.add(this.speed);
 		
 		this.sprite = this.sprite.rotate(
-			spin// *= 0.95
+			spin
 		);
-
+		this.spinoffset += spin % TWO_PI;
 	}
 }

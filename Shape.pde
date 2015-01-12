@@ -20,25 +20,13 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	PVector center() {
-		float sumx = 0;
-		float sumy = 0;
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
+		Poligon composite = new Poligon();
 	
-		for (int i = 0; i < keys.length; i++) {
-			PVector center = this.get(keys[i]).center();
-		
-			sumx += center.x;
-			sumy += center.y;
+		for (String key: this.keySet()) {	
+			composite.addAll(this.get(key));
 		}
 		
-		return new PVector(
-			sumx/this.size(),
-			sumy/this.size()	
-		);
+		return composite.center();
 	}
 	
 	int lineCount() {
@@ -52,17 +40,31 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	float getRadius() {
-		PVector center = this.center();
-		float total = 0;
+		Poligon composite = new Poligon();
 	
 		for (String key: this.keySet()) {	
-			total += PVector.dist(
-				this.get(key).center(),
-				center
-			);
+			composite.addAll(this.get(key));
 		}
 		
-		return total/this.size();
+		return composite.getRadius();
+	}
+	
+	float getArea() {
+		float area = 0;
+		
+		for (String key: this.keySet()) {
+			area += this.get(key).getArea();
+		}
+		
+		for (String outerkey: this.keySet()) {
+			for (String innerkey: this.keySet()) {
+				area -= collider(
+					this.get(outerkey), this.get(innerkey)
+				).get("intersection").getArea();
+			}
+		}
+		
+		return area;
 	}
 	
 	Shape transpose(PVector val) {
@@ -75,11 +77,33 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		return shape;
 	}
 	
+	Shape scale(PVector val) {
+		Shape shape = this.clone();
+	
+		for (String key: this.keySet()) {
+			shape.put(key, shape.get(key).scale(val));
+		}
+		
+		return shape;
+	}
+	
+	Shape scale(float val) {
+		Shape shape = this.clone();
+	
+		for (String key: this.keySet()) {
+			shape.put(key, shape.get(key).scale(val));
+		}
+		
+		return shape;
+	}
+	
 	Shape rotate(float degrees) {
 		Shape shape = this.clone();
 	
 		for (String key: this.keySet()) {
-			shape.get(key).rotate(degrees);
+			shape.put(key,
+				shape.get(key).rotate(degrees)
+			);
 		}
 		
 		return shape;

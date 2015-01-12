@@ -27,6 +27,21 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		return total/this.size();
 	}
 	
+	float getArea() {
+		float sum = 0;
+		
+		for (int i = 0; i < this.size(); i++) {
+			PVector l1 = this.get(i);
+			PVector l2 = this.get(
+				(i + 1) % this.size()
+			);
+			
+			sum += (l1.x * l2.y) - (l1.y * l2.x);
+		}
+		
+		return abs(sum/2);
+	}
+	
 	void draw() {
 		beginShape();
 		
@@ -79,10 +94,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		
 		PVector coords = ori1.get(0);
 		
-		println("new poligon");
-		
 		while (coords != null) {
-			println(coords);
 			poligon.add(coords);
 			ori1.remove(coords);
 			
@@ -112,6 +124,16 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	}
 	
 	Poligon rotate(float degrees) {
+		Poligon poligon = (Poligon)this.clone();
+		
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).rotate(degrees);
+		}
+		
+		return poligon;
+	}
+	
+	Poligon roundRotate(float degrees) {
 		Poligon poligon = (Poligon)this.clone();
 		
 		for (int i = 0; i < poligon.size(); i++) {

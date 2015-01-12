@@ -28,6 +28,9 @@ public class Assignment2StarterCode extends PApplet {
 float gravity;
 float planetScale;
 float hillsize;
+float spinradius;
+float movementspeed;
+float minimapscale;
 
 Drawable map;
 
@@ -40,9 +43,12 @@ public void setup() {
 	buttons = new ArrayList<Button>();
 	size(700, 500);
 
-	gravity = 5;
-	planetScale = 900;
-	hillsize = 5;
+	gravity = 8;
+	planetScale = 1100;
+	hillsize = 550;
+	spinradius = 1000;
+	movementspeed = 2;
+	minimapscale = 60;
 	
 	Poligons();
 	createMap();
@@ -52,66 +58,121 @@ public void setup() {
 }
 
 public void draw() {
+	PVector avgPlayer = new PVector();
+	Drawable minimap = (Drawable)map.clone();
+	
 	background(255);
 	
+	for (Player player: players) {
+		avgPlayer.add(player.position);
+	}
+	
+	avgPlayer.div(players.size());
+
+	//Game map processing		
 	pushMatrix();
-	translate(
-		width/2, height + planetScale -10
-	);
-	rotate(
-		PI - (atan2(players.get(0).position.y, players.get(0).position.x) -
-			atan2(map.position.y, map.position.x)) + HALF_PI
-	);
 	
-	stroke(0);
+		translate(
+			width/2, height/2 + avgPlayer.y
+		);
+		rotate(
+			PI - (atan2(avgPlayer.y, avgPlayer.x) -
+				atan2(map.position.y, map.position.x)) + HALF_PI
+		);
 	
-	map.display();
-	
-	fill(255,255,0);
-	
-	for(Player player: players) {
 		stroke(0);
-		player.update();
-		player.display();
-	}
+		fill(139,69,19);
+		map.display();
 	
-	fill(0);
+		for(Player player: players) {
+			player.update();
+			player.display();
+		}
 	
-	for (int i = 0; i < buttons.size(); i++) {
-		stroke(0);
-		Button button = buttons.get(i);
-		button.display();
-	}
+		fill(0);
+	
+		for (int i = 0; i < buttons.size(); i++) {
+			stroke(0);
+			Button button = buttons.get(i);
+			button.display();
+		}
 	
 	popMatrix();
+	
+	minimap.sprite = minimap
+		.sprite
+		.rotate(
+			PI - (atan2(avgPlayer.y, avgPlayer.x) -
+				atan2(map.position.y, map.position.x)) + HALF_PI
+		)
+		.scale(minimapscale/planetScale);
+
+	minimap.position = new PVector(
+		width - (minimapscale + 20),
+		(minimapscale + 20)
+	);
+	
+	for (Player player: players) {
+		PVector location = minimap
+			.position
+			.get();
+			
+		location.sub(
+			PVector.mult(
+				player.position,
+				minimapscale
+			)
+		);
+		
+		println(location);
+			
+		ellipse(location.x, location.y, 10, 10);
+	}
+	
+	fill(255);
+	stroke(0);
+	minimap.display();
 }
 
 public void createMap() {
-	Poligon Poligon = new Poligon();
+	Poligon poligon = new Poligon();
 	PVector point = new PVector(0,0);
 	float theta = 0;
-	float thetaInc = TWO_PI / 500;
-	float noiseScale = 0.1f;
+	float thetaInc = TWO_PI / 350;
+	float noiseScale = 0.0029f;
+	int start = 0;
 
-	while (theta - PI < HALF_PI) {
-		float radius = 10 + hillsize * noise(	
+	while (theta < TWO_PI) {
+		float radius = planetScale + hillsize * noise(	
 			noiseScale * point.x, 
 			noiseScale * point.y
-		);
+		) * start;
+		
+		if (start == 0) {
+			radius += hillsize/2;
+		}
 		
 		point = new PVector(
 			sin(theta) * radius,
 	    		cos(theta) * radius
 	    	);
 		
-		Poligon.add(point);
+		poligon.add(point);
 		
 		theta += thetaInc;
+		
+		if (theta > HALF_PI/6) {
+			start = 1;
+		}
+		
+		if (theta > TWO_PI - HALF_PI/6) {
+			start = 0;
+		}
 	}
 	
 	map = new Drawable(
 		new PVector(0,0),
-		Poligon.scale(planetScale / 10)
+		poligon
 	);
 }
 
@@ -159,7 +220,7 @@ public void setUpPlayerControllers() {
 		);
 		int x = width/2 - (i + 1) * gap;
 		p.position.x = x;
-		p.position.y = planetScale + hillsize * 200 + 50;
+		p.position.y = planetScale + hillsize + 100;
 		players.add(p);
 	}
 }
@@ -227,14 +288,18 @@ interface CallBack {
 interface Vectorial {
 	public void draw();
 	public int size();
+	public Vectorial clone();
 
 	public PVector[] getLine(int i);
 	public PVector center();
 	public float getRadius();
+	public float getArea();
 	public int lineCount();
 
 	public Vectorial transpose(PVector val);
 	public Vectorial rotate(float degrees);
+	public Vectorial scale(float val);
+	public Vectorial scale(PVector val);
 }
 
 public boolean isNull(Object o1, Object o2) {
@@ -353,6 +418,35 @@ public Shape collider(Drawable p1, Drawable p2) {
 	
 	return toReturn;
 }
+
+public Shape collider(Vectorial p1, Vectorial p2) {
+	Shape toReturn = new Shape();
+	Poligon intersection = new Poligon();
+	
+	for (int i = 0; i < p1.lineCount(); i++) {
+		PVector[] line1 = p1.getLine(i);
+	
+		for (int e = 0; e < p2.lineCount(); e++) {
+			PVector[] line2 = p2.getLine(e);
+
+			PVector intersectionPoint = intersectionInline(
+				line1,
+				line2
+			);
+			
+			if (intersectionPoint != null) {
+				intersection.add(intersectionPoint);
+				toReturn.put("obj1_line", new Poligon(line1));
+				toReturn.put("obj2_line", new Poligon(line2));
+			}
+		}
+	}
+	
+	toReturn.put("intersection", intersection);
+	
+	
+	return toReturn;
+}
 /*
 	Button button = new Button(
 		new PVector(width/2, height/2),
@@ -415,6 +509,13 @@ class Drawable {
 		this.sprite = sprite;
 	}
 	
+	public Drawable clone() {
+		return new Drawable(
+			position.get(),
+			sprite.clone()
+		);
+	}
+	
 	public void display() {
 		Vectorial spriteInSpace = sprite.transpose(position);
 		
@@ -425,12 +526,15 @@ class Droppable extends Drawable {
 	PVector speed;
 	boolean colliding;
 	float spin;
+	float spinoffset;
 	float momentum;
 	
 	Droppable(PVector position, Vectorial sprite) {
 		super(position, sprite);
 		this.speed = new PVector(0,0);
 		this.colliding = false;
+		this.spin = 0;
+		this.spinoffset = 0;
 		this.momentum = 0;
 	}
 	
@@ -472,7 +576,7 @@ class Droppable extends Drawable {
 					.toArray(new PVector[2])
 			);
 
-			if (angle != -1 && !colliding) {
+			if (angle != -1) {
 				Vectorial spriteInSpace = this
 					.sprite
 					.transpose(
@@ -487,44 +591,58 @@ class Droppable extends Drawable {
 					).cross(this.speed);
 				
 				this.spin -= (
-					transfer.mag()/(
-						TWO_PI * spriteInSpace.getRadius()
+					(
+						transfer.mag()/(
+							TWO_PI * spriteInSpace.getRadius() * spinradius
+						)
 					)
 				);
-				this.spin *= 0.5f;
-				this.speed.add(transfer);
-			
-				this.speed = PVector.fromAngle(
-					PI - angle + baseAngle
-				);
-				speed.mult(magnitude);
 				
-				//colliding = true;
+				this.spin *= 0.5f;
+				
+				this.speed = PVector.fromAngle(
+					lineAngle(
+						collision
+							.get("obj1_line")
+							.toArray(new PVector[2]),
+						collision
+							.get("obj2_line")
+							.toArray(new PVector[2])
+					) - HALF_PI
+				);
+				
+				/*this.speed = PVector.fromAngle(
+					PI - (angle + baseAngle)
+				);*/
+				
+				this.speed.mult(magnitude);
+				
+				colliding = true;
 			}
-			else if (angle != -1) {
+			else {
 				colliding = false;
 			}
 		}
 		else {
-			colliding = false;
-			
-			this.speed.x -= sin(
-				HALF_PI + atan2(this.position.y, this.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
-		
-			this.speed.y += cos(
-				HALF_PI + atan2(this.position.y, this.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
+			colliding = false;	
 		}
+		
+		this.speed.x -= sin(
+			HALF_PI + atan2(this.position.y, this.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
+	
+		this.speed.y += cos(
+			HALF_PI + atan2(this.position.y, this.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
 		
 		this.position.add(this.speed);
 		
 		this.sprite = this.sprite.rotate(
-			spin *= 0.95f
+			spin
 		);
-
+		this.spinoffset += spin % TWO_PI;
 	}
 }
 class Player extends Droppable {
@@ -535,24 +653,37 @@ class Player extends Droppable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			new Shape().add("windows",
+			new Shape().add("weel1", circle
+					.transpose(
+						new PVector(15,-20)
+					)
+				)
+				.add("weel2", circle
+					.transpose(
+						new PVector(-15,-20)
+					)
+				)
+				.add("windows",
 					triangle
 						.transpose(
 							new PVector(0,10)
 						)
 						.merge(
 							triangle
-								.rotate(PI)
+								.roundRotate(PI)
 								.transpose(
 									new PVector(10,10)
 								)
 						)
 						.merge(
 							triangle
-								.rotate(PI)
+								.roundRotate(PI)
 								.transpose(
 									new PVector(-10,10)
 								)
+						)
+						.scale(
+							new PVector(1,0.6f)
 						)
 			)
 			.add(
@@ -606,21 +737,26 @@ class Player extends Droppable {
 	}
 	
 	public void display() {
-		stroke(colour);
+		fill(colour);
+		stroke(color(255));
 		
 		super.display();
 	}
 	
-	public void update() {		
-		if (checkKey(keyBinds.get("up"))) {
-			spin += HALF_PI;
+	public void update() {
+		if (!colliding) {	
+			if (checkKey(keyBinds.get("up"))) {
+				spin += 0.035f;
+			}
+			if (checkKey(keyBinds.get("down"))) {
+				spin -= 0.035f;
+			}
 		}
-		if (checkKey(keyBinds.get("down"))) {
-			spin -= HALF_PI;
-		}  
-		if (checkKey(keyBinds.get("right"))) {
-			speed.x -= (HALF_PI - cos(spin));
-			speed.y -= (HALF_PI - sin(spin));
+		else {
+			if (checkKey(keyBinds.get("right"))) {
+				speed.x -= (cos(spinoffset)) * movementspeed;
+				speed.y -= (sin(spinoffset)) * movementspeed;
+			}
 		}
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
@@ -662,6 +798,21 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		}
 		
 		return total/this.size();
+	}
+	
+	public float getArea() {
+		float sum = 0;
+		
+		for (int i = 0; i < this.size(); i++) {
+			PVector l1 = this.get(i);
+			PVector l2 = this.get(
+				(i + 1) % this.size()
+			);
+			
+			sum += (l1.x * l2.y) - (l1.y * l2.x);
+		}
+		
+		return abs(sum/2);
 	}
 	
 	public void draw() {
@@ -716,10 +867,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		
 		PVector coords = ori1.get(0);
 		
-		println("new poligon");
-		
 		while (coords != null) {
-			println(coords);
 			poligon.add(coords);
 			ori1.remove(coords);
 			
@@ -735,7 +883,6 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				if (ori2.contains(coords) && ori2.contains(ori1.get(0))) {
 					Collections.reverse(ori1);
 				}
-				
 			}
 			
 			if (ori1.size() > 0) {
@@ -750,6 +897,16 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	}
 	
 	public Poligon rotate(float degrees) {
+		Poligon poligon = (Poligon)this.clone();
+		
+		for (int i = 0; i < poligon.size(); i++) {
+			poligon.get(i).rotate(degrees);
+		}
+		
+		return poligon;
+	}
+	
+	public Poligon roundRotate(float degrees) {
 		Poligon poligon = (Poligon)this.clone();
 		
 		for (int i = 0; i < poligon.size(); i++) {
@@ -870,25 +1027,13 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	public PVector center() {
-		float sumx = 0;
-		float sumy = 0;
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
+		Poligon composite = new Poligon();
 	
-		for (int i = 0; i < keys.length; i++) {
-			PVector center = this.get(keys[i]).center();
-		
-			sumx += center.x;
-			sumy += center.y;
+		for (String key: this.keySet()) {	
+			composite.addAll(this.get(key));
 		}
 		
-		return new PVector(
-			sumx/this.size(),
-			sumy/this.size()	
-		);
+		return composite.center();
 	}
 	
 	public int lineCount() {
@@ -902,17 +1047,31 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	public float getRadius() {
-		PVector center = this.center();
-		float total = 0;
+		Poligon composite = new Poligon();
 	
 		for (String key: this.keySet()) {	
-			total += PVector.dist(
-				this.get(key).center(),
-				center
-			);
+			composite.addAll(this.get(key));
 		}
 		
-		return total/this.size();
+		return composite.getRadius();
+	}
+	
+	public float getArea() {
+		float area = 0;
+		
+		for (String key: this.keySet()) {
+			area += this.get(key).getArea();
+		}
+		
+		for (String outerkey: this.keySet()) {
+			for (String innerkey: this.keySet()) {
+				area -= collider(
+					this.get(outerkey), this.get(innerkey)
+				).get("intersection").getArea();
+			}
+		}
+		
+		return area;
 	}
 	
 	public Shape transpose(PVector val) {
@@ -925,11 +1084,33 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		return shape;
 	}
 	
+	public Shape scale(PVector val) {
+		Shape shape = this.clone();
+	
+		for (String key: this.keySet()) {
+			shape.put(key, shape.get(key).scale(val));
+		}
+		
+		return shape;
+	}
+	
+	public Shape scale(float val) {
+		Shape shape = this.clone();
+	
+		for (String key: this.keySet()) {
+			shape.put(key, shape.get(key).scale(val));
+		}
+		
+		return shape;
+	}
+	
 	public Shape rotate(float degrees) {
 		Shape shape = this.clone();
 	
 		for (String key: this.keySet()) {
-			shape.get(key).rotate(degrees);
+			shape.put(key,
+				shape.get(key).rotate(degrees)
+			);
 		}
 		
 		return shape;

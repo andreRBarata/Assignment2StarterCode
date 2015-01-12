@@ -7,6 +7,13 @@ class Drawable {
 		this.sprite = sprite;
 	}
 	
+	Drawable clone() {
+		return new Drawable(
+			position.get(),
+			sprite.clone()
+		);
+	}
+	
 	void display() {
 		Vectorial spriteInSpace = sprite.transpose(position);
 		

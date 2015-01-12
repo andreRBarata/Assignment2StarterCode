@@ -6,25 +6,38 @@ class Player extends Droppable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			new Shape().add("windows",
+			new Shape().add("weel1", circle
+					.transpose(
+						new PVector(15,-20)
+					)
+				)
+				.add("weel2", circle
+					.transpose(
+						new PVector(-15,-20)
+					)
+				)
+				.add("windows",
 					triangle
 						.transpose(
 							new PVector(0,10)
 						)
 						.merge(
 							triangle
-								.rotate(PI)
+								.roundRotate(PI)
 								.transpose(
 									new PVector(10,10)
 								)
 						)
-						/*.merge(
+						.merge(
 							triangle
-								.rotate(PI)
+								.roundRotate(PI)
 								.transpose(
 									new PVector(-10,10)
 								)
-						)*/
+						)
+						.scale(
+							new PVector(1,0.6)
+						)
 			)
 			.add(
 				"body", rectangle
@@ -77,21 +90,26 @@ class Player extends Droppable {
 	}
 	
 	void display() {
-		stroke(colour);
+		fill(colour);
+		stroke(color(255));
 		
 		super.display();
 	}
 	
-	void update() {		
-		if (checkKey(keyBinds.get("up"))) {
-			spin += HALF_PI;
+	void update() {
+		if (!colliding) {	
+			if (checkKey(keyBinds.get("up"))) {
+				spin += 0.035;
+			}
+			if (checkKey(keyBinds.get("down"))) {
+				spin -= 0.035;
+			}
 		}
-		if (checkKey(keyBinds.get("down"))) {
-			spin -= HALF_PI;
-		}  
-		if (checkKey(keyBinds.get("right"))) {
-			speed.x -= (HALF_PI - cos(spin));
-			speed.y -= (HALF_PI - sin(spin));
+		else {
+			if (checkKey(keyBinds.get("right"))) {
+				speed.x -= (cos(spinoffset)) * movementspeed;
+				speed.y += (sin(spinoffset)) * movementspeed;
+			}
 		}
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
