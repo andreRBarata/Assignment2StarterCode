@@ -23,7 +23,7 @@ boolean[] keys = new boolean[526];
 void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
-	size(700, 500);
+	size(700, 700);
 
 	gravity = 8;
 	planetScale = 1100;
@@ -34,52 +34,76 @@ void setup() {
 	
 	Poligons();
 	createMap();
-	
+	//map.sprite = triangle.roundRotate(PI).scale(110);
 	background(255);
 	setUpPlayerControllers();
 }
 
 void draw() {
+	/*noLoop();
+	players.get(0).position = new PVector(489.15033, 132.2817);
+	println("collision", collider(players.get(0), map));*/
+	
 	PVector avgPlayer = new PVector();
 	Drawable minimap = (Drawable)map.clone();
 	
-	background(255);
+	background(51);
 	
 	for (Player player: players) {
 		avgPlayer.add(player.position);
 	}
 	
 	avgPlayer.div(players.size());
-
 	//Game map processing		
 	pushMatrix();
-	
 		translate(
 			width/2, height/2 + avgPlayer.y
 		);
 		rotate(
-			PI - (atan2(avgPlayer.y, avgPlayer.x) -
-				atan2(map.position.y, map.position.x)) + HALF_PI
+			- (HALF_PI + PVector.angleBetween(
+				avgPlayer,
+				new PVector(1, 0)
+			))
 		);
-	
+		
 		stroke(0);
-		fill(139,69,19);
+		fill(255);
 		map.display();
-	
+		
 		for(Player player: players) {
 			player.update();
 			player.display();
 		}
-	
-		fill(0);
-	
-		for (int i = 0; i < buttons.size(); i++) {
-			stroke(0);
-			Button button = buttons.get(i);
-			button.display();
-		}
-	
+		
 	popMatrix();
+	
+	
+	fill(0);
+	
+	for (int i = 0; i < buttons.size(); i++) {
+		stroke(0);
+		Button button = buttons.get(i);
+		button.display();
+	}
+	
+	for (Player player: players) {
+		PVector location = minimap
+			.position
+			.get();
+		
+		location = PVector.sub(
+			location,
+			PVector.mult(
+				player.position,
+				minimapscale/planetScale
+			)
+		);
+			
+		ellipse(location.x, location.y, 10, 10);
+	}
+	
+	fill(255);
+	stroke(0);
 	
 	minimap.sprite = minimap
 		.sprite
@@ -94,25 +118,6 @@ void draw() {
 		(minimapscale + 20)
 	);
 	
-	for (Player player: players) {
-		PVector location = minimap
-			.position
-			.get();
-			
-		location.sub(
-			PVector.mult(
-				player.position,
-				minimapscale
-			)
-		);
-		
-		println(location);
-			
-		ellipse(location.x, location.y, 10, 10);
-	}
-	
-	fill(255);
-	stroke(0);
 	minimap.display();
 }
 
@@ -125,13 +130,19 @@ void createMap() {
 	int start = 0;
 
 	while (theta < TWO_PI) {
-		float radius = planetScale + hillsize * noise(	
-			noiseScale * point.x, 
-			noiseScale * point.y
+		float radius = map(
+			noise(	
+				noiseScale * point.x, 
+				noiseScale * point.y
+			),
+			0,
+			1,
+			planetScale,
+			planetScale + hillsize
 		) * start;
 		
 		if (start == 0) {
-			radius += hillsize/2;
+			radius += planetScale + hillsize/2;
 		}
 		
 		point = new PVector(
@@ -193,7 +204,7 @@ void setUpPlayerControllers() {
 	XML[] children = xml.getChildren("player");
 	int gap = width / (children.length + 1);
 	
-	for(int i = 0; i < children.length; i ++) {
+	for(int i = 0; i < 1/*children.length*/; i ++) {
 		XML playerXML = children[i];
 		Player p = new Player(
 			i,

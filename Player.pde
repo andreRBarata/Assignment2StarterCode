@@ -6,7 +6,8 @@ class Player extends Droppable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			new Shape().add("weel1", circle
+			rectangle
+			/*new Shape().add("weel1", circle
 					.transpose(
 						new PVector(15,-20)
 					)
@@ -47,7 +48,7 @@ class Player extends Droppable {
 						.scale(
 							new PVector(3,1)
 						)
-			)
+			)*/
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}
@@ -91,9 +92,8 @@ class Player extends Droppable {
 	
 	void display() {
 		fill(colour);
-		stroke(color(255));
-		
 		super.display();
+		
 	}
 	
 	void update() {

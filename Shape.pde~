@@ -1,7 +1,11 @@
 class Shape extends TreeMap<String,Poligon> implements Vectorial {
+	Poligon outline;
+	
 	
 	Shape clone() {
 		Shape shape = new Shape();
+		
+		shape.outline = outline.clone();
 		
 		for (String key: this.keySet()) {
 			shape.put(
@@ -29,11 +33,31 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		return composite.center();
 	}
 	
-	int lineCount() {
+	void updateOutline() {
+		this.outline = getOutline();
+	}
+	
+	boolean contains(PVector point) {
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+		int i = 0;
+		boolean contains = false;
+		
+		while (i < keys.length && !contains) {
+			contains = this.get(keys[i]).contains(point);
+		}
+		
+		return contains;
+	}
+	
+	int count() {
 		int size = 0;
 
 		for (String key: this.keySet()) {
-			size += this.get(key).lineCount();
+			size += this.get(key).count();
 		}
 		
 		return size;
@@ -63,6 +87,29 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 				).get("intersection").getArea();
 			}
 		}
+		
+		return area;
+	}
+	
+	Poligon getOutline() {
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+		Poligon outline = null;
+		
+		if (this.size() >= 1) {
+			outline = this.get(keys[0]).clone();
+		}
+		
+		if (this.size() > 1) {
+			for (int i = 1; i < keys.length; i++) {
+				outline.merge(this.get(keys[i]).clone());
+			}
+		}
+		
+		return outline;
 	}
 	
 	Shape transpose(PVector val) {
@@ -123,7 +170,7 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		int e = 0;
 		
 		while (e < this.size() && i >= this.get(keys[e]).size()) {
-			i -= this.get(keys[e]).lineCount();
+			i -= this.get(keys[e]).count();
 			e++;
 		}
 		
@@ -137,4 +184,28 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 			return null;
 		}
 	}
+	
+	/*PVector get(int i) {
+		String[] keys = this
+			.keySet()
+			.toArray(
+				new String[this.size()]
+			);
+		int e = 0;
+		
+		while (e < this.size() && i >= this.get(keys[e]).size()) {
+			i -= this.get(keys[e]).count();
+			e++;
+		}
+		
+		
+		if (i < this.get(keys[e]).size()) {
+			Poligon poligon = this.get(keys[e]);
+		
+			return poligon.get(i);
+		}
+		else {
+			return null;
+		}
+	}*/
 }

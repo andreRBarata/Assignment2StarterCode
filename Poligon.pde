@@ -12,7 +12,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		super(Arrays.asList(poligon));
 	}
 	
-	int lineCount() {
+	int count() {
 		return this.size();
 	}
 	
@@ -57,7 +57,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	
 	PVector[] getLine(int i) {
 		return new PVector[] {
-			this.get(i),
+			this.get(i).get(),
 			this.get((i + 1) % this.size())
 		};
 	}
@@ -94,6 +94,31 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		
 		PVector coords = ori1.get(0);
 		
+		for (int i = 0; i < ori1.count(); i++) {
+			for (int e = 0; e < ori2.count(); e++) {
+
+				PVector tmp = intersectionInline(
+					ori1.getLine(i),
+					ori2.getLine(e)
+				);
+
+				if (tmp != null) {
+					coords = tmp;
+					if (!ori1.contains(coords)) {
+						if (!equalApproximately(ori1.get(i), coords)) {
+							ori1.add(i + 1, coords);
+						}
+					}
+			
+					if (!ori2.contains(coords)) {
+						if (!equalApproximately(ori2.get(e), coords)) {
+							ori2.add(e + 1, coords);
+						}
+					}
+				}
+			}
+		}
+		
 		while (coords != null) {
 			poligon.add(coords);
 			ori1.remove(coords);
@@ -119,7 +144,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				coords = null;
 			}
 		}
-		
+		println(poligon);
 		return poligon;	
 	}
 	

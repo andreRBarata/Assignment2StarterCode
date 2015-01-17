@@ -6,6 +6,7 @@ class Player extends Droppable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
+			//rectangle
 			new Shape().add("weel1", circle
 					.transpose(
 						new PVector(15,-20)
@@ -91,9 +92,8 @@ class Player extends Droppable {
 	
 	void display() {
 		fill(colour);
-		stroke(color(255));
-		
 		super.display();
+		
 	}
 	
 	void update() {
@@ -108,7 +108,7 @@ class Player extends Droppable {
 		else {
 			if (checkKey(keyBinds.get("right"))) {
 				speed.x -= (cos(spinoffset)) * movementspeed;
-				speed.y += (sin(spinoffset)) * movementspeed;
+				speed.y -= (sin(spinoffset)) * movementspeed;
 			}
 		}
 		if (checkKey(keyBinds.get("start"))) {

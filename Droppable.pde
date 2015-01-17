@@ -14,112 +14,124 @@ class Droppable extends Drawable {
 		this.momentum = 0;
 	}
 	
-	void update() {
-		Shape collision = collider(this, map);
+	Droppable clone() {
+		Droppable clone = new Droppable(
+			this.position.get(),
+			this.sprite.clone()
+		);
 		
-		if (collision.get("intersection").size() > 1) {
-			PVector old_position = this.position.get();
-			old_position.sub(this.speed);
-			PVector edgeVector = collision
-				.get("obj2_line")
-				.get(1)
-				.get();
+		clone.speed = this.speed.get();
+		clone.colliding = new Boolean(this.colliding);
+		clone.spin = new Float(this.spin);
+		clone.spinoffset = new Float(this.spinoffset);
+		clone.momentum = new Float(this.momentum);
+		
+		return clone;
+	}
+	
+	void update() {
+		if (this.sprite instanceof Shape) {
+			((Shape)this.sprite).updateOutline();
+		}
+	
+		Shape collision = collider(this, map);
+		float area = collision
+			.get("intersection")
+			.getArea();
+		//Droppable sink avoidence
+		float lerp = 1;
+		Droppable copy = this.clone();
+		PVector nextposition = PVector.add(
+			this.position,
+			this.speed
+		);
+		
+		do {
+			copy.position = PVector.lerp(
+				this.position,
+				nextposition,
+				lerp
+			);
+			
+			collision = collider(copy, map);
+			
+			area = collision
+				.get("intersection")
+				.getArea();
 				
-			edgeVector.sub(
-				collision
-					.get("obj2_line")
-					.get(0)
-			);
+			//println("position", copy.position,"area", area, "lerp", lerp, collision.get("intersection"));
 			
-			float baseAngle = lineAngle(
-				collision
-					.get("obj2_line")
-					.toArray(new PVector[2]),
-				new PVector[] {
-					new PVector(0,0),
-					new PVector(1,0)
-				}
-			);
-			
+			lerp /= 2;
+		}
+		while (area > 0 && lerp > 0.01);
+		
+		//println("intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));
+		
+		this.position = copy.position.get();
+		copy.position = nextposition.get();
+		
+		collision = collider(copy, map);
+		
+		if (collision.get("intersection").size() > 2) {
 			float magnitude = speed.mag()/1.5;
-			float angle = lineAngle(
-				new PVector[] {
-					old_position,
-					this.position
-				},
-				collision
-					.get("obj2_line")
-					.toArray(new PVector[2])
+			
+			Vectorial spriteInSpace = copy
+				.sprite
+				.transpose(
+					position
+				);
+				
+			PVector transfer = PVector.sub(
+					spriteInSpace.center(),
+					collision
+						.get("intersection")
+						.center()
+				).cross(this.speed);
+			
+			this.spin -= (
+				(
+					transfer.mag()/(
+						TWO_PI * spriteInSpace.getRadius() * spinradius
+					)
+				)
 			);
 			
+			this.spin *= 0.5;
 			
+			this.speed = PVector.fromAngle(
+				PI - lineAngle(
+					new PVector[] {
+						PVector.sub(position, speed),
+						copy.position
+					},
+					collision
+						.get("obj2_line")
+						.toArray(new PVector[2])
+				)
+			);
 			
-			if (angle != -1) {
-				Vectorial spriteInSpace = this
-					.sprite
-					.transpose(
-						position
-					);
-					
-				PVector transfer = PVector.sub(
-						spriteInSpace.center(),
-						collision
-							.get("intersection")
-							.center()
-					).cross(this.speed);
-				
-				this.spin -= (
-					(
-						transfer.mag()/(
-							TWO_PI * spriteInSpace.getRadius() * spinradius
-						)
-					)
-				);
-				
-				this.spin *= 0.5;
-				
-				this.speed = PVector.fromAngle(
-					lineAngle(
-						collision
-							.get("obj1_line")
-							.toArray(new PVector[2]),
-						collision
-							.get("obj2_line")
-							.toArray(new PVector[2])
-					) - HALF_PI
-				);
-				
-				/*this.speed = PVector.fromAngle(
-					PI - (angle + baseAngle)
-				);*/
-				
-				this.speed.mult(magnitude);
-				
-				colliding = true;
-			}
-			else {
-				colliding = false;
-			}
+			this.speed.mult(magnitude);
+			
+			colliding = true;
 		}
 		else {
 			colliding = false;	
 		}
 		
+		this.sprite = this.sprite.rotate(
+			spin
+		);
+		
 		this.speed.x -= sin(
-			HALF_PI + atan2(this.position.y, this.position.x) -
+			HALF_PI + atan2(copy.position.y, copy.position.x) -
 				atan2(map.position.y, map.position.x)
 		) * (gravity/frameRate);
 	
 		this.speed.y += cos(
-			HALF_PI + atan2(this.position.y, this.position.x) -
+			HALF_PI + atan2(copy.position.y, copy.position.x) -
 				atan2(map.position.y, map.position.x)
 		) * (gravity/frameRate);
 		
-		this.position.add(this.speed);
-		
-		this.sprite = this.sprite.rotate(
-			spin
-		);
-		this.spinoffset += spin % TWO_PI;
+		this.spinoffset = (this.spinoffset + this.spin) % TWO_PI;
 	}
 }
