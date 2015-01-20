@@ -29,7 +29,7 @@ void setup() {
 	planetScale = 1100;
 	hillsize = 550;
 	spinradius = 1000;
-	movementspeed = 2;
+	movementspeed = 10;
 	minimapscale = 60;
 	
 	Poligons();
@@ -42,10 +42,9 @@ void setup() {
 void draw() {
 	/*noLoop();
 	players.get(0).position = new PVector(489.15033, 132.2817);
-	println("collision", collider(players.get(0), map));*/
+	((Shape)players.get(0).sprite).getOutline();*/
 	
 	PVector avgPlayer = new PVector();
-	Drawable minimap = (Drawable)map.clone();
 	
 	background(51);
 	
@@ -86,6 +85,12 @@ void draw() {
 		button.display();
 	}
 	
+	hud(avgPlayer);
+}
+
+void hud(PVector avgPlayer) {
+	Drawable minimap = (Drawable)map.clone();
+
 	for (Player player: players) {
 		PVector location = minimap
 			.position
@@ -218,18 +223,18 @@ void setUpPlayerControllers() {
 	}
 }
 
-/*void mousePressed() {
-	for (int i = 0; i < buttons.size(); i++) {
-		Button button = buttons.get(i);
+void mousePressed() {
+	for (Button button: buttons) {
+		Vectorial spriteInSpace = button
+			.sprite
+			.transpose(button.position);
 		
-		if (mouseX > button.position.x && mouseX < button.position.x + button.Poligon.maxWidth()) {
-			if (mouseY > button.position.y && mouseY < button.position.y + button.Poligon.maxHeight()) {
-				button.clicked = true;
-				button.callback.run();
-			}
+		if (pointInVectorial(new PVector(mouseX,mouseY), spriteInSpace)) {
+			button.clicked = true;
+			button.callback.run();
 		}
 	}
-}*/
+}
 
 void mouseReleased() {
 	for (int i = 0; i < buttons.size(); i++) {

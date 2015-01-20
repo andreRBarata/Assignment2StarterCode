@@ -16,6 +16,15 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		return this.size();
 	}
 	
+	boolean containsApproximately(PVector point) {
+		int i = 0;
+		
+		while (!equalApproximately(this.get(i),point) && i > this.size()) {
+			i++;
+		}
+		return (equalApproximately(this.get(i),point));
+	}
+	
 	float getRadius() {
 		float total = 0;
 		PVector center = this.center();
@@ -87,30 +96,35 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		);
 	}
 	
-	Poligon merge(Poligon merge) {
+	Poligon union(Poligon union) {
 		Poligon poligon = new Poligon();
 		Poligon ori1 = this.clone();
-		Poligon ori2 = merge.clone();
+		Poligon ori2 = union.clone();
 		
 		PVector coords = ori1.get(0);
 		
+		//println("before", ori1, ori2);
+		
 		for (int i = 0; i < ori1.count(); i++) {
 			for (int e = 0; e < ori2.count(); e++) {
-
 				PVector tmp = intersectionInline(
 					ori1.getLine(i),
 					ori2.getLine(e)
 				);
-
+				//print("lines");
+				//print(ori1.getLine(i));
+				//println(ori2.getLine(e));
 				if (tmp != null) {
 					coords = tmp;
-					if (!ori1.contains(coords)) {
+					//println("tmp", tmp);
+					if (!ori1.containsApproximately(coords)) {
 						if (!equalApproximately(ori1.get(i), coords)) {
+							//println("tmp2", coords);
 							ori1.add(i + 1, coords);
 						}
 					}
 			
-					if (!ori2.contains(coords)) {
+					if (!ori2.containsApproximately(coords)) {
 						if (!equalApproximately(ori2.get(e), coords)) {
 							ori2.add(e + 1, coords);
 						}
@@ -118,6 +132,44 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				}
 			}
 		}
+		
+		Collections.rotate(ori1, -ori1.indexOf(coords));
+		
+		print("poligons");
+		print(ori1);
+		println(ori2);
+		
+		do {
+			poligon.add(ori1.get(0));
+			//println("adding", ori1.get(0));
+			if (ori2.contains(ori1.get(0))) {
+				Poligon tmp = ori1;
+				
+				ori1 = ori2;
+				ori2 = tmp;
+				//println("switched");
+				Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
+				
+				if (pointInVectorial(ori1.get(1), ori2)) {
+					Collections.reverse(ori1);
+					//println("reversed");
+				}
+			}
+			
+			Collections.rotate(ori1, 1);
+		}
+		while (!poligon.contains(ori1.get(0)));
+		
+		//println("poligon", poligon);
+		return poligon;
+	}
+	
+	Poligon merge(Poligon merge) {
+		Poligon poligon = new Poligon();
+		Poligon ori1 = this.clone();
+		Poligon ori2 = merge.clone();
+		
+		PVector coords = ori1.get(0);
 		
 		while (coords != null) {
 			poligon.add(coords);
@@ -130,7 +182,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				
 				ori1 = ori2;
 				ori2 = tmp;
-				Collections.rotate(ori1, ori1.indexOf(coords));
+				Collections.rotate(ori1, -ori1.indexOf(coords));
 				
 				if (ori2.contains(coords) && ori2.contains(ori1.get(0))) {
 					Collections.reverse(ori1);
@@ -144,7 +196,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				coords = null;
 			}
 		}
-		println(poligon);
+		//println("return", poligon);
 		return poligon;	
 	}
 	

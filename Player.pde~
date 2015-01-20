@@ -48,7 +48,7 @@ class Player extends Droppable {
 						.scale(
 							new PVector(3,1)
 						)
-			)
+			)*
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}

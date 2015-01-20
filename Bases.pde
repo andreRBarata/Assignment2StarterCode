@@ -26,16 +26,23 @@ boolean isNull(Object o1, Object o2) {
 
 boolean equalApproximately(PVector p1, PVector p2) {
 	return (
-		(abs(p1.x - p2.x) < 0.0000001) &&
-		(abs(p1.y - p2.y) < 0.0000001)
+		(abs(p1.x - p2.x) < 0.0001) &&
+		(abs(p1.y - p2.y) < 0.0001)
 	);
 }
 
+
 boolean inBox(PVector point, PVector[] line) {
-	if (point.y >= min(line[0].y, line[1].y)) {
-		if (point.y <= max(line[0].y, line[1].y)) {
-			if (point.x >= min(line[0].x, line[1].x)) {
-				if (point.x <= max(line[0].x, line[1].x)) {
+	/*print("Starting in box", point);
+	println(line );
+	println("y >= min", point.y, min(line[0].y, line[1].y));*/
+	if (point.y >= min(line[0].y, line[1].y)-0.00001) {
+		//println("y <=max", point.y, max(line[0].y, line[1].y));
+		if (point.y <= max(line[0].y, line[1].y)+0.00001) {
+			//println("x >= min", point.x, min(line[0].x, line[1].x));
+			if (point.x >= min(line[0].x, line[1].x)-0.00001) {
+				//println("x <= max", point.x, max(line[0].x, line[1].x));
+				if (point.x <= max(line[0].x, line[1].x)+0.00001) {
 					return true;
 				}
 			}
@@ -45,10 +52,16 @@ boolean inBox(PVector point, PVector[] line) {
 	return false;
 }
 
+/*boolean inBox(PVector point, PVector[] line) {
+	return inLine(point, line);
+}*/
+
 boolean inLine(PVector point, PVector[] line) {
 	float m = lineSlope(line);
 	float b = line[0].y - m * line[0].x;
-	
+	//print("point",point);
+	//print("line");
+	//println(line);
 	if ((Float.isNaN(m) || Float.isInfinite(m))) {
 		return (
 			(abs(point.x - line[0].x) <= 0.0000001) &&
@@ -59,8 +72,8 @@ boolean inLine(PVector point, PVector[] line) {
 	else {
 		return  (	
 				((m * point.x + b) == point.y) &&
-				(point.x <= max(line[0].x, line[1].x)) &&
-				(point.x >= min(line[0].x, line[1].x))
+				(point.y <= max(line[0].y, line[1].y)) &&
+				(point.y >= min(line[0].y, line[1].y))
 			);
 	}	
 }
@@ -123,7 +136,7 @@ PVector intersectionInline(PVector[] line1, PVector[] line2) {
 	PVector intersection = getIntersection(line1, line2);
 	
 	if (intersection != null) {
-		////println("point", intersection);
+		//println("point", intersection);
 		if (inBox(intersection, line1) && inBox(intersection, line2)) {
 			return intersection;
 		}
@@ -196,7 +209,9 @@ boolean pointInVectorial(PVector point, Vectorial sprite) {
 			}
 			i++;
 		}
-		isInside = ((count % 2) == 1);
+		if (!isInside) {
+			isInside = ((count % 2) == 1);
+		}
 		//println("count", count);
 	}
 	
@@ -341,64 +356,17 @@ Shape collider(Poligon p1, Poligon p2) {
 	return toReturn;
 }
 
-/*Shape collider(Drawable p1, Drawable p2) {
-	Shape toReturn = new Shape();
-	Vectorial spriteInSpace1 = p1.sprite
-		.transpose(p1.position);
-	Vectorial spriteInSpace2 = p2.sprite
-		.transpose(p2.position);
-	Poligon intersection = new Poligon();
-	
-	for (int i = 0; i < spriteInSpace1.count(); i++) {
-		PVector[] line1 = spriteInSpace1.getLine(i);
-	
-		for (int e = 0; e < spriteInSpace2.count(); e++) {
-			PVector[] line2 = spriteInSpace2.getLine(e);
-
-			PVector intersectionPoint = intersectionInline(
-				line1,
-				line2
-			);
-			
-			if (intersectionPoint != null) {
-				intersection.add(intersectionPoint);
-				toReturn.put("obj1_line", new Poligon(line1));
-				toReturn.put("obj2_line", new Poligon(line2));
-			}
-		}
+Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
+	if (spriteInSpace1 instanceof Shape) {
+		spriteInSpace1 = ((Shape)spriteInSpace1).outline.clone();
 	}
 	
-	toReturn.put("intersection", intersection);
-	
-	return toReturn;
-}*/
-
-
-Shape collider(Vectorial p1, Vectorial p2) {
-	Shape toReturn = new Shape();
-	Poligon intersection = new Poligon();
-	
-	for (int i = 0; i < p1.count(); i++) {
-		PVector[] line1 = p1.getLine(i);
-	
-		for (int e = 0; e < p2.count(); e++) {
-			PVector[] line2 = p2.getLine(e);
-
-			PVector intersectionPoint = intersectionInline(
-				line1,
-				line2
-			);
-			
-			if (intersectionPoint != null) {
-				intersection.add(intersectionPoint);
-				toReturn.put("obj1_line", new Poligon(line1));
-				toReturn.put("obj2_line", new Poligon(line2));
-			}
-		}
+	if (spriteInSpace2 instanceof Shape) {
+		spriteInSpace2 = ((Shape)spriteInSpace2).outline.clone();
 	}
-	
-	toReturn.put("intersection", intersection);
-	
-	
-	return toReturn;
+
+	return collider(
+		(Poligon)spriteInSpace1,
+		(Poligon)spriteInSpace2
+	);
 }

@@ -45,7 +45,7 @@ class Droppable extends Drawable {
 			this.position,
 			this.speed
 		);
-		//println("lerp");
+		
 		do {
 			copy.position = PVector.lerp(
 				this.position,
@@ -91,7 +91,7 @@ class Droppable extends Drawable {
 			this.spin -= (
 				(
 					transfer.mag()/(
-						TWO_PI * spriteInSpace.getRadius() * spinradius
+						TWO_PI * spriteInSpace.getRadius() * spinradius * 100
 					)
 				)
 			);

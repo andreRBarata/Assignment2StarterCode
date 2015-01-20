@@ -1,7 +1,6 @@
 class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	Poligon outline;
-	
-	
+
 	Shape clone() {
 		Shape shape = new Shape();
 		
@@ -105,10 +104,12 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		
 		if (this.size() > 1) {
 			for (int i = 1; i < keys.length; i++) {
-				outline.merge(this.get(keys[i]).clone());
+				outline.union(this.get(keys[i]).clone());
 			}
 		}
 		
+		/*print("outline");
+		println(outline);*/
 		return outline;
 	}
 	
@@ -184,28 +185,4 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 			return null;
 		}
 	}
-	
-	/*PVector get(int i) {
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
-		int e = 0;
-		
-		while (e < this.size() && i >= this.get(keys[e]).size()) {
-			i -= this.get(keys[e]).count();
-			e++;
-		}
-		
-		
-		if (i < this.get(keys[e]).size()) {
-			Poligon poligon = this.get(keys[e]);
-		
-			return poligon.get(i);
-		}
-		else {
-			return null;
-		}
-	}*/
 }

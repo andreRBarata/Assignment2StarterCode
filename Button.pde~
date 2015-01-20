@@ -46,8 +46,8 @@ class Button extends Drawable {
 		
 		text(
 			text,
-			position.x + this.Poligon.maxWidth()/2 - textWidth(text)/2,
-			position.y + (this.Poligon.maxHeight() + 10)/2
+			position.x + this.Poligon.getRadius()/2 - textWidth(text)/2,
+			position.y + (this.Poligon.getRadius()/2 + 10)
 		);
 	}
 }

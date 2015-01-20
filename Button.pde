@@ -32,7 +32,7 @@ class Button extends Drawable {
 		this.text = text;
 	}
 	
-	/*void draw() {
+	void draw() {
 		fill(color(255));
 
 		super.display();
@@ -46,8 +46,8 @@ class Button extends Drawable {
 		
 		text(
 			text,
-			position.x + this.Poligon.maxWidth()/2 - textWidth(text)/2,
-			position.y + (this.Poligon.maxHeight() + 10)/2
+			position.x + this.sprite.getRadius()/2 - textWidth(text)/2,
+			position.y + (this.sprite.getRadius()/2 + 10)
 		);
-	}*/
+	}
 }

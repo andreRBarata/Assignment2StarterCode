@@ -47,7 +47,7 @@ public void setup() {
 	planetScale = 1100;
 	hillsize = 550;
 	spinradius = 1000;
-	movementspeed = 2;
+	movementspeed = 10;
 	minimapscale = 60;
 	
 	Poligons();
@@ -60,10 +60,9 @@ public void setup() {
 public void draw() {
 	/*noLoop();
 	players.get(0).position = new PVector(489.15033, 132.2817);
-	println("collision", collider(players.get(0), map));*/
+	((Shape)players.get(0).sprite).getOutline();*/
 	
 	PVector avgPlayer = new PVector();
-	Drawable minimap = (Drawable)map.clone();
 	
 	background(51);
 	
@@ -104,6 +103,12 @@ public void draw() {
 		button.display();
 	}
 	
+	hud(avgPlayer);
+}
+
+public void hud(PVector avgPlayer) {
+	Drawable minimap = (Drawable)map.clone();
+
 	for (Player player: players) {
 		PVector location = minimap
 			.position
@@ -236,18 +241,18 @@ public void setUpPlayerControllers() {
 	}
 }
 
-/*void mousePressed() {
-	for (int i = 0; i < buttons.size(); i++) {
-		Button button = buttons.get(i);
+public void mousePressed() {
+	for (Button button: buttons) {
+		Vectorial spriteInSpace = button
+			.sprite
+			.transpose(button.position);
 		
-		if (mouseX > button.position.x && mouseX < button.position.x + button.Poligon.maxWidth()) {
-			if (mouseY > button.position.y && mouseY < button.position.y + button.Poligon.maxHeight()) {
-				button.clicked = true;
-				button.callback.run();
-			}
+		if (pointInVectorial(new PVector(mouseX,mouseY), spriteInSpace)) {
+			button.clicked = true;
+			button.callback.run();
 		}
 	}
-}*/
+}
 
 public void mouseReleased() {
 	for (int i = 0; i < buttons.size(); i++) {
@@ -320,16 +325,23 @@ public boolean isNull(Object o1, Object o2) {
 
 public boolean equalApproximately(PVector p1, PVector p2) {
 	return (
-		(abs(p1.x - p2.x) < 0.0000001f) &&
-		(abs(p1.y - p2.y) < 0.0000001f)
+		(abs(p1.x - p2.x) < 0.0001f) &&
+		(abs(p1.y - p2.y) < 0.0001f)
 	);
 }
 
+
 public boolean inBox(PVector point, PVector[] line) {
-	if (point.y >= min(line[0].y, line[1].y)) {
-		if (point.y <= max(line[0].y, line[1].y)) {
-			if (point.x >= min(line[0].x, line[1].x)) {
-				if (point.x <= max(line[0].x, line[1].x)) {
+	/*print("Starting in box", point);
+	println(line );
+	println("y >= min", point.y, min(line[0].y, line[1].y));*/
+	if (point.y >= min(line[0].y, line[1].y)-0.00001f) {
+		//println("y <=max", point.y, max(line[0].y, line[1].y));
+		if (point.y <= max(line[0].y, line[1].y)+0.00001f) {
+			//println("x >= min", point.x, min(line[0].x, line[1].x));
+			if (point.x >= min(line[0].x, line[1].x)-0.00001f) {
+				//println("x <= max", point.x, max(line[0].x, line[1].x));
+				if (point.x <= max(line[0].x, line[1].x)+0.00001f) {
 					return true;
 				}
 			}
@@ -339,10 +351,16 @@ public boolean inBox(PVector point, PVector[] line) {
 	return false;
 }
 
+/*boolean inBox(PVector point, PVector[] line) {
+	return inLine(point, line);
+}*/
+
 public boolean inLine(PVector point, PVector[] line) {
 	float m = lineSlope(line);
 	float b = line[0].y - m * line[0].x;
-	
+	//print("point",point);
+	//print("line");
+	//println(line);
 	if ((Float.isNaN(m) || Float.isInfinite(m))) {
 		return (
 			(abs(point.x - line[0].x) <= 0.0000001f) &&
@@ -353,8 +371,8 @@ public boolean inLine(PVector point, PVector[] line) {
 	else {
 		return  (	
 				((m * point.x + b) == point.y) &&
-				(point.x <= max(line[0].x, line[1].x)) &&
-				(point.x >= min(line[0].x, line[1].x))
+				(point.y <= max(line[0].y, line[1].y)) &&
+				(point.y >= min(line[0].y, line[1].y))
 			);
 	}	
 }
@@ -417,7 +435,7 @@ public PVector intersectionInline(PVector[] line1, PVector[] line2) {
 	PVector intersection = getIntersection(line1, line2);
 	
 	if (intersection != null) {
-		////println("point", intersection);
+		//println("point", intersection);
 		if (inBox(intersection, line1) && inBox(intersection, line2)) {
 			return intersection;
 		}
@@ -490,7 +508,9 @@ public boolean pointInVectorial(PVector point, Vectorial sprite) {
 			}
 			i++;
 		}
-		isInside = ((count % 2) == 1);
+		if (!isInside) {
+			isInside = ((count % 2) == 1);
+		}
 		//println("count", count);
 	}
 	
@@ -635,66 +655,19 @@ public Shape collider(Poligon p1, Poligon p2) {
 	return toReturn;
 }
 
-/*Shape collider(Drawable p1, Drawable p2) {
-	Shape toReturn = new Shape();
-	Vectorial spriteInSpace1 = p1.sprite
-		.transpose(p1.position);
-	Vectorial spriteInSpace2 = p2.sprite
-		.transpose(p2.position);
-	Poligon intersection = new Poligon();
-	
-	for (int i = 0; i < spriteInSpace1.count(); i++) {
-		PVector[] line1 = spriteInSpace1.getLine(i);
-	
-		for (int e = 0; e < spriteInSpace2.count(); e++) {
-			PVector[] line2 = spriteInSpace2.getLine(e);
-
-			PVector intersectionPoint = intersectionInline(
-				line1,
-				line2
-			);
-			
-			if (intersectionPoint != null) {
-				intersection.add(intersectionPoint);
-				toReturn.put("obj1_line", new Poligon(line1));
-				toReturn.put("obj2_line", new Poligon(line2));
-			}
-		}
+public Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
+	if (spriteInSpace1 instanceof Shape) {
+		spriteInSpace1 = ((Shape)spriteInSpace1).outline.clone();
 	}
 	
-	toReturn.put("intersection", intersection);
-	
-	return toReturn;
-}*/
-
-
-public Shape collider(Vectorial p1, Vectorial p2) {
-	Shape toReturn = new Shape();
-	Poligon intersection = new Poligon();
-	
-	for (int i = 0; i < p1.count(); i++) {
-		PVector[] line1 = p1.getLine(i);
-	
-		for (int e = 0; e < p2.count(); e++) {
-			PVector[] line2 = p2.getLine(e);
-
-			PVector intersectionPoint = intersectionInline(
-				line1,
-				line2
-			);
-			
-			if (intersectionPoint != null) {
-				intersection.add(intersectionPoint);
-				toReturn.put("obj1_line", new Poligon(line1));
-				toReturn.put("obj2_line", new Poligon(line2));
-			}
-		}
+	if (spriteInSpace2 instanceof Shape) {
+		spriteInSpace2 = ((Shape)spriteInSpace2).outline.clone();
 	}
-	
-	toReturn.put("intersection", intersection);
-	
-	
-	return toReturn;
+
+	return collider(
+		(Poligon)spriteInSpace1,
+		(Poligon)spriteInSpace2
+	);
 }
 /*
 	Button button = new Button(
@@ -730,7 +703,7 @@ class Button extends Drawable {
 		this.text = text;
 	}
 	
-	/*void draw() {
+	public void draw() {
 		fill(color(255));
 
 		super.display();
@@ -744,10 +717,10 @@ class Button extends Drawable {
 		
 		text(
 			text,
-			position.x + this.Poligon.maxWidth()/2 - textWidth(text)/2,
-			position.y + (this.Poligon.maxHeight() + 10)/2
+			position.x + this.sprite.getRadius()/2 - textWidth(text)/2,
+			position.y + (this.sprite.getRadius()/2 + 10)
 		);
-	}*/
+	}
 }
 class Drawable {
 	PVector position;
@@ -916,8 +889,8 @@ class Player extends Droppable {
 	Player() {
 		super(
 			new PVector(width / 2, height / 2),
-			rectangle
-			/*new Shape().add("weel1", circle
+			//rectangle
+			new Shape().add("weel1", circle
 					.transpose(
 						new PVector(15,-20)
 					)
@@ -947,7 +920,7 @@ class Player extends Droppable {
 								)
 						)
 						.scale(
-							new PVector(1,0.6)
+							new PVector(1,0.6f)
 						)
 			)
 			.add(
@@ -958,7 +931,7 @@ class Player extends Droppable {
 						.scale(
 							new PVector(3,1)
 						)
-			)*/
+			)
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}
@@ -1052,6 +1025,15 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		return this.size();
 	}
 	
+	public boolean containsApproximately(PVector point) {
+		int i = 0;
+		
+		while (!equalApproximately(this.get(i),point) && i > this.size()) {
+			i++;
+		}
+		return (equalApproximately(this.get(i),point));
+	}
+	
 	public float getRadius() {
 		float total = 0;
 		PVector center = this.center();
@@ -1123,30 +1105,35 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		);
 	}
 	
-	public Poligon merge(Poligon merge) {
+	public Poligon union(Poligon union) {
 		Poligon poligon = new Poligon();
 		Poligon ori1 = this.clone();
-		Poligon ori2 = merge.clone();
+		Poligon ori2 = union.clone();
 		
 		PVector coords = ori1.get(0);
 		
+		//println("before", ori1, ori2);
+		
 		for (int i = 0; i < ori1.count(); i++) {
 			for (int e = 0; e < ori2.count(); e++) {
-
 				PVector tmp = intersectionInline(
 					ori1.getLine(i),
 					ori2.getLine(e)
 				);
-
+				//print("lines");
+				//print(ori1.getLine(i));
+				//println(ori2.getLine(e));
 				if (tmp != null) {
 					coords = tmp;
-					if (!ori1.contains(coords)) {
+					//println("tmp", tmp);
+					if (!ori1.containsApproximately(coords)) {
 						if (!equalApproximately(ori1.get(i), coords)) {
+							//println("tmp2", coords);
 							ori1.add(i + 1, coords);
 						}
 					}
 			
-					if (!ori2.contains(coords)) {
+					if (!ori2.containsApproximately(coords)) {
 						if (!equalApproximately(ori2.get(e), coords)) {
 							ori2.add(e + 1, coords);
 						}
@@ -1154,6 +1141,44 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				}
 			}
 		}
+		
+		Collections.rotate(ori1, -ori1.indexOf(coords));
+		
+		print("poligons");
+		print(ori1);
+		println(ori2);
+		
+		do {
+			poligon.add(ori1.get(0));
+			//println("adding", ori1.get(0));
+			if (ori2.contains(ori1.get(0))) {
+				Poligon tmp = ori1;
+				
+				ori1 = ori2;
+				ori2 = tmp;
+				//println("switched");
+				Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
+				
+				if (pointInVectorial(ori1.get(1), ori2)) {
+					Collections.reverse(ori1);
+					//println("reversed");
+				}
+			}
+			
+			Collections.rotate(ori1, 1);
+		}
+		while (!poligon.contains(ori1.get(0)));
+		
+		//println("poligon", poligon);
+		return poligon;
+	}
+	
+	public Poligon merge(Poligon merge) {
+		Poligon poligon = new Poligon();
+		Poligon ori1 = this.clone();
+		Poligon ori2 = merge.clone();
+		
+		PVector coords = ori1.get(0);
 		
 		while (coords != null) {
 			poligon.add(coords);
@@ -1166,7 +1191,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				
 				ori1 = ori2;
 				ori2 = tmp;
-				Collections.rotate(ori1, ori1.indexOf(coords));
+				Collections.rotate(ori1, -ori1.indexOf(coords));
 				
 				if (ori2.contains(coords) && ori2.contains(ori1.get(0))) {
 					Collections.reverse(ori1);
@@ -1180,7 +1205,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				coords = null;
 			}
 		}
-		println(poligon);
+		//println("return", poligon);
 		return poligon;	
 	}
 	
@@ -1295,8 +1320,7 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 }
 class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	Poligon outline;
-	
-	
+
 	public Shape clone() {
 		Shape shape = new Shape();
 		
@@ -1400,10 +1424,12 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		
 		if (this.size() > 1) {
 			for (int i = 1; i < keys.length; i++) {
-				outline.merge(this.get(keys[i]).clone());
+				outline.union(this.get(keys[i]).clone());
 			}
 		}
 		
+		/*print("outline");
+		println(outline);*/
 		return outline;
 	}
 	
@@ -1479,30 +1505,6 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 			return null;
 		}
 	}
-	
-	/*PVector get(int i) {
-		String[] keys = this
-			.keySet()
-			.toArray(
-				new String[this.size()]
-			);
-		int e = 0;
-		
-		while (e < this.size() && i >= this.get(keys[e]).size()) {
-			i -= this.get(keys[e]).count();
-			e++;
-		}
-		
-		
-		if (i < this.get(keys[e]).size()) {
-			Poligon poligon = this.get(keys[e]);
-		
-			return poligon.get(i);
-		}
-		else {
-			return null;
-		}
-	}*/
 }
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "Assignment2StarterCode" };
