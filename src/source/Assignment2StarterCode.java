@@ -25,6 +25,8 @@ public class Assignment2StarterCode extends PApplet {
 */
 
 
+boolean devMode = false;
+
 float gravity;
 float planetScale;
 float hillsize;
@@ -41,7 +43,12 @@ boolean[] keys = new boolean[526];
 public void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
-	size(700, 700);
+	if (devMode) {
+		size(800, 600);
+	}
+	else {
+		size(displayWidth, displayHeight);
+	}
 
 	gravity = 8;
 	planetScale = 1100;
@@ -59,8 +66,9 @@ public void setup() {
 
 public void draw() {
 	/*noLoop();
-	players.get(0).position = new PVector(489.15033, 132.2817);
-	((Shape)players.get(0).sprite).getOutline();*/
+	players.get(0).position = new PVector(69.24815, 1374.2155);
+	((Shape)players.get(0).sprite).updateOutline();
+	println(collider(players.get(0),map));*/
 	
 	PVector avgPlayer = new PVector();
 	
@@ -73,14 +81,15 @@ public void draw() {
 	avgPlayer.div(players.size());
 	//Game map processing		
 	pushMatrix();
+		float angle = -(HALF_PI + atan2(
+				avgPlayer.y, avgPlayer.x
+			)
+		);
 		translate(
-			width/2, height/2 + avgPlayer.y
+			width/2, -(avgPlayer.y/cos(angle)) + height/2
 		);
 		rotate(
-			- (HALF_PI + PVector.angleBetween(
-				avgPlayer,
-				new PVector(1, 0)
-			))
+			angle
 		);
 		
 		stroke(0);
@@ -333,8 +342,8 @@ public boolean equalApproximately(PVector p1, PVector p2) {
 
 public boolean inBox(PVector point, PVector[] line) {
 	/*print("Starting in box", point);
-	println(line );
-	println("y >= min", point.y, min(line[0].y, line[1].y));*/
+	//println(line );
+	//println("y >= min", point.y, min(line[0].y, line[1].y));*/
 	if (point.y >= min(line[0].y, line[1].y)-0.00001f) {
 		//println("y <=max", point.y, max(line[0].y, line[1].y));
 		if (point.y <= max(line[0].y, line[1].y)+0.00001f) {
@@ -560,54 +569,53 @@ public Shape collider(Poligon p1, Poligon p2) {
 				p1clone.getLine(i),
 				p2clone.getLine(e)
 			);
-			//////print("Calculating intersection of");
-			//////print(p1clone.getLine(i));
-			//////print(" and ");
-			////println(p2clone.getLine(e));
-			////println("found intersection:", tmp);
+			/*print("Calculating intersection of");
+			print(p1clone.getLine(i));
+			print(" and ");
+			//println(p2clone.getLine(e));
+			//println("found intersection:", tmp);*/
 			if (tmp != null) {
-				////println("intersection is not null");
-				pointception = tmp;
-				toReturn.put("obj1_line",
-					new Poligon(
-						p1clone.getLine(i)
-					)
-				);
-				toReturn.put("obj2_line",
-					new Poligon(
-						p2clone.getLine(e)
-					)
-				);
-				////println("testing p1clone: ", p1clone, "does not contain", pointception);
-				if (!p1clone.contains(pointception)) {
-					////println("testing p1clone: ", p1clone.get(i), "is not equal to", pointception);
-					if (!equalApproximately(p1clone.get(i), pointception)) {
+				if (!equalApproximately(p1clone.get(i), tmp) && !equalApproximately(p2clone.get(e), tmp)) {
+					////println("intersection is not null");
+					pointception = tmp;
+					toReturn.put("obj1_line",
+						new Poligon(
+							p1clone.getLine(i)
+						)
+					);
+					toReturn.put("obj2_line",
+						new Poligon(
+							p2clone.getLine(e)
+						)
+					);
+					////println("testing p1clone: ", p1clone, "does not contain", pointception);
+					if (!p1clone.contains(pointception)) {
+						////println("testing p1clone: ", p1clone.get(i), "is not equal to", pointception);
 						////println("adding ",pointception, "to p1clone:", p1clone);
 						p1clone.add(i + 1, pointception);
 					}
-				}
 				
-				////println("testing p2clone: ", p2clone, "does not contain", pointception);
-				if (!p2clone.contains(pointception)) {
-					////println("testing p2clone: ", p2clone.get(e), "is not equal to", pointception);
-					if (!equalApproximately(p2clone.get(e), pointception)) {
+					////println("testing p2clone: ", p2clone, "does not contain", pointception);
+					if (!p2clone.contains(pointception)) {
+						////println("testing p2clone: ", p2clone.get(e), "is not equal to", pointception);
 						////println("adding ",pointception, "to p2clone:", p2clone);
 						p2clone.add(e + 1, pointception);
 					}
 				}
-				
 			}
 
 		}
 	}
 
-	//println("p1clone with intersections", p1clone);
+	/*println("p1clone with intersections", p1clone);
 	//println("p2clone with intersections", p2clone);
 	
 	//println("== Creating intersection polygon");
-	Collections.rotate(p1clone, -p1clone.indexOf(pointception));
-	Collections.rotate(p2clone, -p2clone.indexOf(pointception));
-	//println("pointception", pointception);
+	
+	//println("index", p1clone.indexOf(pointception));
+	
+	//println("pointception", pointception);*/
+	
 	if (pointception == null) {
 		if (pointInVectorial(p1clone.get(0), p2)) {
 			intersection = p1.clone();
@@ -617,35 +625,44 @@ public Shape collider(Poligon p1, Poligon p2) {
 		}
 	}
 	else {
+		Collections.rotate(p1clone, -p1clone.indexOf(pointception));
+		Collections.rotate(p2clone, -p2clone.indexOf(pointception));
+			
 		//println("cicle");
 		do {
-			//println("P1=",p1clone);
-			//println("P2=",p2clone);
+//			//println("P1=",p1clone);
+//			//println("P2=",p2clone);
 			intersection.add(p1clone.get(0));
 			//println("adding", p1clone.get(0));
-			//println("considering", p1clone.get(1), p2clone);
+			//println("considering", p1clone.get(1));
 			if (!pointInVectorial(p1clone.get(1), p2clone)) {
 				Poligon tmp = p1clone;
 				//println("does not contain 1");
 				p1clone = p2clone;
 				p2clone = tmp;
 				
+				//println("index2", -p1clone.indexOf(p2clone.get(0)));
+				
+				Collections.rotate(p1clone, -p1clone.indexOf(p2clone.get(0)));
 				//println("switched polygon, now considering", p1clone.get(1));
+				
+				if (!pointInVectorial(p1clone.get(1), p2clone)) {
+					//println("does not contain 2");
+					PVector here = p1clone.get(0);
+					Collections.reverse(p1clone);
+					Collections.rotate(p1clone, -p1clone.indexOf(here));
+					
+					//println("reversed polygon, now considering", p1clone.get(1));
+				}
 			}
 			
-			if (!pointInVectorial(p1clone.get(1), p2clone)) {
-				//println("does not contain 2");
-				Collections.reverse(p1clone);
-				//println("rotated polygon, now considering", p1clone.get(1));
-			}
-			
-			//println("In", p1clone, p1clone.size());
+			//println("In", p1clone.size());
 			Collections.rotate(p1clone, -1);
-			Collections.rotate(p2clone, -p2clone.indexOf(p1clone.get(0)));
+			
 			//println("Intersection now contains",intersection);
 			//println("p1clone now contains",p1clone);
-			//println("testing: ",p1clone.get(0), "in", p2, p1clone.get(0), "not in", intersection);
-			//println( "results: ", pointInVectorial(p1clone.get(0), p2) , !intersection.contains(p1clone.get(0) ));
+			//println("testing: ",p1clone.get(0), "in", p2clone, p1clone.get(0), "not in", intersection);
+			//println( "results: ", pointInVectorial(p1clone.get(0), p2clone) , !intersection.contains(p1clone.get(0) ));
 		}
 		while (pointInVectorial(p1clone.get(0), p2clone) && !intersection.contains(p1clone.get(0)));
 	}
@@ -809,9 +826,9 @@ class Droppable extends Drawable {
 			
 			lerp /= 2;
 		}
-		while (area > 0 && lerp > 0.01f);
+		while (collision.get("intersection").size() > 0 && lerp > 0.01f);
 		
-		//println("intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));
+		println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));
 		
 		this.position = copy.position.get();
 		copy.position = nextposition.get();
@@ -844,17 +861,25 @@ class Droppable extends Drawable {
 			
 			this.spin *= 0.5f;
 			
-			this.speed = PVector.fromAngle(
-				PI - lineAngle(
-					new PVector[] {
-						PVector.sub(position, speed),
-						copy.position
-					},
-					collision
-						.get("obj2_line")
-						.toArray(new PVector[2])
-				)
-			);
+			println("area",collision.get("intersection").getArea());
+			
+			if (collision.get("obj2_line") != null) {
+				this.speed = PVector.fromAngle(
+					PI - lineAngle(
+						new PVector[] {
+							PVector.sub(position, speed),
+							copy.position
+						},
+						collision
+							.get("obj2_line")
+							.toArray(new PVector[2])
+					)
+				);
+			}
+			else {
+				//This is not supposed to happen
+				this.speed = new PVector(0,0);
+			}
 			
 			this.speed.mult(magnitude);
 			
@@ -868,15 +893,17 @@ class Droppable extends Drawable {
 			spin
 		);
 		
-		this.speed.x -= sin(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
+		if (!devMode) {
+			this.speed.x -= sin(
+				HALF_PI + atan2(copy.position.y, copy.position.x) -
+					atan2(map.position.y, map.position.x)
+			) * (gravity/frameRate);
 	
-		this.speed.y += cos(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
+			this.speed.y += cos(
+				HALF_PI + atan2(copy.position.y, copy.position.x) -
+					atan2(map.position.y, map.position.x)
+			) * (gravity/frameRate);
+		}
 		
 		this.spinoffset = (this.spinoffset + this.spin) % TWO_PI;
 	}
@@ -1028,10 +1055,10 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	public boolean containsApproximately(PVector point) {
 		int i = 0;
 		
-		while (!equalApproximately(this.get(i),point) && i > this.size()) {
+		while (i < this.size() && !equalApproximately(this.get(i),point)) {
 			i++;
 		}
-		return (equalApproximately(this.get(i),point));
+		return (i != this.size());
 	}
 	
 	public float getRadius() {
@@ -1144,9 +1171,9 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		
 		Collections.rotate(ori1, -ori1.indexOf(coords));
 		
-		print("poligons");
+		/*print("poligons");
 		print(ori1);
-		println(ori2);
+		println(ori2);*/
 		
 		do {
 			poligon.add(ori1.get(0));
@@ -1157,15 +1184,18 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				ori1 = ori2;
 				ori2 = tmp;
 				//println("switched");
+				
 				Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
 				
 				if (pointInVectorial(ori1.get(1), ori2)) {
 					Collections.reverse(ori1);
 					//println("reversed");
+					
+					Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
 				}
 			}
 			
-			Collections.rotate(ori1, 1);
+			Collections.rotate(ori1, -1);
 		}
 		while (!poligon.contains(ori1.get(0)));
 		
@@ -1424,7 +1454,7 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		
 		if (this.size() > 1) {
 			for (int i = 1; i < keys.length; i++) {
-				outline.union(this.get(keys[i]).clone());
+				outline = outline.union(this.get(keys[i]).clone());
 			}
 		}
 		

@@ -19,10 +19,10 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	boolean containsApproximately(PVector point) {
 		int i = 0;
 		
-		while (!equalApproximately(this.get(i),point) && i > this.size()) {
+		while (i < this.size() && !equalApproximately(this.get(i),point)) {
 			i++;
 		}
-		return (equalApproximately(this.get(i),point));
+		return (i != this.size());
 	}
 	
 	float getRadius() {
@@ -135,9 +135,9 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 		
 		Collections.rotate(ori1, -ori1.indexOf(coords));
 		
-		print("poligons");
+		/*print("poligons");
 		print(ori1);
-		println(ori2);
+		println(ori2);*/
 		
 		do {
 			poligon.add(ori1.get(0));
@@ -148,15 +148,18 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 				ori1 = ori2;
 				ori2 = tmp;
 				//println("switched");
+				
 				Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
 				
 				if (pointInVectorial(ori1.get(1), ori2)) {
 					Collections.reverse(ori1);
 					//println("reversed");
+					
+					Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
 				}
 			}
 			
-			Collections.rotate(ori1, 1);
+			Collections.rotate(ori1, -1);
 		}
 		while (!poligon.contains(ori1.get(0)));
 		

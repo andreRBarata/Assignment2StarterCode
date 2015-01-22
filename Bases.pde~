@@ -34,8 +34,8 @@ boolean equalApproximately(PVector p1, PVector p2) {
 
 boolean inBox(PVector point, PVector[] line) {
 	/*print("Starting in box", point);
-	println(line );
-	println("y >= min", point.y, min(line[0].y, line[1].y));*/
+	\println(line );
+	\println("y >= min", point.y, min(line[0].y, line[1].y));*/
 	if (point.y >= min(line[0].y, line[1].y)-0.00001) {
 		//println("y <=max", point.y, max(line[0].y, line[1].y));
 		if (point.y <= max(line[0].y, line[1].y)+0.00001) {
@@ -261,54 +261,53 @@ Shape collider(Poligon p1, Poligon p2) {
 				p1clone.getLine(i),
 				p2clone.getLine(e)
 			);
-			//////print("Calculating intersection of");
-			//////print(p1clone.getLine(i));
-			//////print(" and ");
-			////println(p2clone.getLine(e));
-			////println("found intersection:", tmp);
+			/*print("Calculating intersection of");
+			print(p1clone.getLine(i));
+			print(" and ");
+			\println(p2clone.getLine(e));
+			\println("found intersection:", tmp);*/
 			if (tmp != null) {
-				////println("intersection is not null");
-				pointception = tmp;
-				toReturn.put("obj1_line",
-					new Poligon(
-						p1clone.getLine(i)
-					)
-				);
-				toReturn.put("obj2_line",
-					new Poligon(
-						p2clone.getLine(e)
-					)
-				);
-				////println("testing p1clone: ", p1clone, "does not contain", pointception);
-				if (!p1clone.contains(pointception)) {
-					////println("testing p1clone: ", p1clone.get(i), "is not equal to", pointception);
-					if (!equalApproximately(p1clone.get(i), pointception)) {
+				if (!equalApproximately(p1clone.get(i), tmp) && !equalApproximately(p2clone.get(e), tmp)) {
+					////println("intersection is not null");
+					pointception = tmp;
+					toReturn.put("obj1_line",
+						new Poligon(
+							p1clone.getLine(i)
+						)
+					);
+					toReturn.put("obj2_line",
+						new Poligon(
+							p2clone.getLine(e)
+						)
+					);
+					////println("testing p1clone: ", p1clone, "does not contain", pointception);
+					if (!p1clone.contains(pointception)) {
+						////println("testing p1clone: ", p1clone.get(i), "is not equal to", pointception);
 						////println("adding ",pointception, "to p1clone:", p1clone);
 						p1clone.add(i + 1, pointception);
 					}
-				}
 				
-				////println("testing p2clone: ", p2clone, "does not contain", pointception);
-				if (!p2clone.contains(pointception)) {
-					////println("testing p2clone: ", p2clone.get(e), "is not equal to", pointception);
-					if (!equalApproximately(p2clone.get(e), pointception)) {
+					////println("testing p2clone: ", p2clone, "does not contain", pointception);
+					if (!p2clone.contains(pointception)) {
+						////println("testing p2clone: ", p2clone.get(e), "is not equal to", pointception);
 						////println("adding ",pointception, "to p2clone:", p2clone);
 						p2clone.add(e + 1, pointception);
 					}
 				}
-				
 			}
 
 		}
 	}
 
-	//println("p1clone with intersections", p1clone);
-	//println("p2clone with intersections", p2clone);
+	/*println("p1clone with intersections", p1clone);
+	\println("p2clone with intersections", p2clone);
 	
-	//println("== Creating intersection polygon");
-	Collections.rotate(p1clone, -p1clone.indexOf(pointception));
-	Collections.rotate(p2clone, -p2clone.indexOf(pointception));
-	//println("pointception", pointception);
+	\println("== Creating intersection polygon");
+	
+	\println("index", p1clone.indexOf(pointception));
+	
+	\println("pointception", pointception);*/
+	
 	if (pointception == null) {
 		if (pointInVectorial(p1clone.get(0), p2)) {
 			intersection = p1.clone();
@@ -318,35 +317,44 @@ Shape collider(Poligon p1, Poligon p2) {
 		}
 	}
 	else {
-		//println("cicle");
+		Collections.rotate(p1clone, -p1clone.indexOf(pointception));
+		Collections.rotate(p2clone, -p2clone.indexOf(pointception));
+			
+		\println("cicle");
 		do {
-			//println("P1=",p1clone);
-			//println("P2=",p2clone);
+//			\println("P1=",p1clone);
+//			\println("P2=",p2clone);
 			intersection.add(p1clone.get(0));
-			//println("adding", p1clone.get(0));
-			//println("considering", p1clone.get(1), p2clone);
+			\println("adding", p1clone.get(0));
+			\println("considering", p1clone.get(1));
 			if (!pointInVectorial(p1clone.get(1), p2clone)) {
 				Poligon tmp = p1clone;
-				//println("does not contain 1");
+				\println("does not contain 1");
 				p1clone = p2clone;
 				p2clone = tmp;
 				
-				//println("switched polygon, now considering", p1clone.get(1));
+				\println("index2", -p1clone.indexOf(p2clone.get(0)));
+				
+				Collections.rotate(p1clone, -p1clone.indexOf(p2clone.get(0)));
+				\println("switched polygon, now considering", p1clone.get(1));
+				
+				if (!pointInVectorial(p1clone.get(1), p2clone)) {
+					\println("does not contain 2");
+					PVector here = p1clone.get(0);
+					Collections.reverse(p1clone);
+					Collections.rotate(p1clone, -p1clone.indexOf(here));
+					
+					\println("reversed polygon, now considering", p1clone.get(1));
+				}
 			}
 			
-			if (!pointInVectorial(p1clone.get(1), p2clone)) {
-				//println("does not contain 2");
-				Collections.reverse(p1clone);
-				//println("rotated polygon, now considering", p1clone.get(1));
-			}
-			
-			//println("In", p1clone, p1clone.size());
+			\println("In", p1clone.size());
 			Collections.rotate(p1clone, -1);
-			Collections.rotate(p2clone, -p2clone.indexOf(p1clone.get(0)));
-			//println("Intersection now contains",intersection);
+			
+			\println("Intersection now contains",intersection);
 			//println("p1clone now contains",p1clone);
-			//println("testing: ",p1clone.get(0), "in", p2, p1clone.get(0), "not in", intersection);
-			//println( "results: ", pointInVectorial(p1clone.get(0), p2) , !intersection.contains(p1clone.get(0) ));
+			//println("testing: ",p1clone.get(0), "in", p2clone, p1clone.get(0), "not in", intersection);
+			\println( "results: ", pointInVectorial(p1clone.get(0), p2clone) , !intersection.contains(p1clone.get(0) ));
 		}
 		while (pointInVectorial(p1clone.get(0), p2clone) && !intersection.contains(p1clone.get(0)));
 	}
@@ -364,9 +372,6 @@ Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 	if (spriteInSpace2 instanceof Shape) {
 		spriteInSpace2 = ((Shape)spriteInSpace2).outline.clone();
 	}
-	
-	spriteInSpace1 = spriteInSpace1.transpose(p1.position);
-	spriteInSpace2 = spriteInSpace2.transpose(p2.position);
 
 	return collider(
 		(Poligon)spriteInSpace1,

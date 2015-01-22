@@ -104,7 +104,7 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		
 		if (this.size() > 1) {
 			for (int i = 1; i < keys.length; i++) {
-				outline.union(this.get(keys[i]).clone());
+				outline = outline.union(this.get(keys[i]).clone());
 			}
 		}
 		

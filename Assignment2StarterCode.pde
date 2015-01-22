@@ -7,6 +7,8 @@
 */
 import java.util.*;
 
+boolean devMode = false;
+
 float gravity;
 float planetScale;
 float hillsize;
@@ -23,7 +25,12 @@ boolean[] keys = new boolean[526];
 void setup() {
 	players = new ArrayList<Player>();
 	buttons = new ArrayList<Button>();
-	size(700, 700);
+	if (devMode) {
+		size(800, 600);
+	}
+	else {
+		size(displayWidth, displayHeight);
+	}
 
 	gravity = 8;
 	planetScale = 1100;
@@ -41,8 +48,9 @@ void setup() {
 
 void draw() {
 	/*noLoop();
-	players.get(0).position = new PVector(489.15033, 132.2817);
-	((Shape)players.get(0).sprite).getOutline();*/
+	players.get(0).position = new PVector(69.24815, 1374.2155);
+	((Shape)players.get(0).sprite).updateOutline();
+	println(collider(players.get(0),map));*/
 	
 	PVector avgPlayer = new PVector();
 	
@@ -55,14 +63,15 @@ void draw() {
 	avgPlayer.div(players.size());
 	//Game map processing		
 	pushMatrix();
+		float angle = -(HALF_PI + atan2(
+				avgPlayer.y, avgPlayer.x
+			)
+		);
 		translate(
-			width/2, height/2 + avgPlayer.y
+			width/2, -(avgPlayer.y/cos(angle)) + height/2
 		);
 		rotate(
-			- (HALF_PI + PVector.angleBetween(
-				avgPlayer,
-				new PVector(1, 0)
-			))
+			angle
 		);
 		
 		stroke(0);

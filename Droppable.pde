@@ -63,9 +63,9 @@ class Droppable extends Drawable {
 			
 			lerp /= 2;
 		}
-		while (area > 0 && lerp > 0.01);
+		while (collision.get("intersection").size() > 0 && lerp > 0.01);
 		
-		//println("intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));
+		println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));
 		
 		this.position = copy.position.get();
 		copy.position = nextposition.get();
@@ -98,17 +98,25 @@ class Droppable extends Drawable {
 			
 			this.spin *= 0.5;
 			
-			this.speed = PVector.fromAngle(
-				PI - lineAngle(
-					new PVector[] {
-						PVector.sub(position, speed),
-						copy.position
-					},
-					collision
-						.get("obj2_line")
-						.toArray(new PVector[2])
-				)
-			);
+			println("area",collision.get("intersection").getArea());
+			
+			if (collision.get("obj2_line") != null) {
+				this.speed = PVector.fromAngle(
+					PI - lineAngle(
+						new PVector[] {
+							PVector.sub(position, speed),
+							copy.position
+						},
+						collision
+							.get("obj2_line")
+							.toArray(new PVector[2])
+					)
+				);
+			}
+			else {
+				//This is not supposed to happen
+				this.speed = new PVector(0,0);
+			}
 			
 			this.speed.mult(magnitude);
 			
@@ -122,15 +130,17 @@ class Droppable extends Drawable {
 			spin
 		);
 		
-		this.speed.x -= sin(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
+		if (!devMode) {
+			this.speed.x -= sin(
+				HALF_PI + atan2(copy.position.y, copy.position.x) -
+					atan2(map.position.y, map.position.x)
+			) * (gravity/frameRate);
 	
-		this.speed.y += cos(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
+			this.speed.y += cos(
+				HALF_PI + atan2(copy.position.y, copy.position.x) -
+					atan2(map.position.y, map.position.x)
+			) * (gravity/frameRate);
+		}
 		
 		this.spinoffset = (this.spinoffset + this.spin) % TWO_PI;
 	}
