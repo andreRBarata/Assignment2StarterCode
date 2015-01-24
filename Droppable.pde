@@ -33,46 +33,21 @@ class Droppable extends Drawable {
 		if (this.sprite instanceof Shape) {
 			((Shape)this.sprite).updateOutline();
 		}
-	
-		Shape collision = collider(this, map);
-		float area = collision
-			.get("intersection")
-			.getArea();
-		//Droppable sink avoidence
-		float lerp = 1;
 		Droppable copy = this.clone();
-		PVector nextposition = PVector.add(
+		Shape collision = null;
+		
+		/*println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));*/
+		
+		adjustToSurface(this, map);
+		
+		copy.position = PVector.add(
 			this.position,
 			this.speed
 		);
 		
-		do {
-			copy.position = PVector.lerp(
-				this.position,
-				nextposition,
-				lerp
-			);
-			
-			collision = collider(copy, map);
-			
-			area = collision
-				.get("intersection")
-				.getArea();
-				
-			//println("position", copy.position,"area", area, "lerp", lerp, collision.get("intersection"));
-			
-			lerp /= 2;
-		}
-		while (collision.get("intersection").size() > 0 && lerp > 0.01);
-		
-		println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));
-		
-		this.position = copy.position.get();
-		copy.position = nextposition.get();
-		
 		collision = collider(copy, map);
 		
-		if (collision.get("intersection").size() > 2) {
+		if (collision.get("intersection").getArea() > 1) {
 			float magnitude = speed.mag()/1.5;
 			
 			Vectorial spriteInSpace = copy
@@ -96,7 +71,6 @@ class Droppable extends Drawable {
 				)
 			);
 			
-			this.spin *= 0.5;
 			
 			println("area",collision.get("intersection").getArea());
 			
@@ -129,18 +103,18 @@ class Droppable extends Drawable {
 		this.sprite = this.sprite.rotate(
 			spin
 		);
+		this.spin *= 0.5;
 		
-		if (!devMode) {
-			this.speed.x -= sin(
-				HALF_PI + atan2(copy.position.y, copy.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
-	
-			this.speed.y += cos(
-				HALF_PI + atan2(copy.position.y, copy.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
-		}
+
+		this.speed.x -= sin(
+			HALF_PI + atan2(copy.position.y, copy.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
+
+		this.speed.y += cos(
+			HALF_PI + atan2(copy.position.y, copy.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
 		
 		this.spinoffset = (this.spinoffset + this.spin) % TWO_PI;
 	}

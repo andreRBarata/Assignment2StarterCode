@@ -32,22 +32,22 @@ class Button extends Drawable {
 		this.text = text;
 	}
 	
-	void draw() {
-		fill(color(255));
-
-		super.display();
-		
+	void display() {
 		if (!clicked) {
-			fill(color(0));
+			fill(color(255));
 		}
 		else {
 			fill(color(20,20,200));
 		}
+
+		super.display();
+		
+		fill(0);
 		
 		text(
 			text,
-			position.x + this.sprite.getRadius()/2 - textWidth(text)/2,
-			position.y + (this.sprite.getRadius()/2 + 10)
+			position.x,
+			position.y
 		);
 	}
 }

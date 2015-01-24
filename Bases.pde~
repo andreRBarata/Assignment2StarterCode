@@ -34,8 +34,8 @@ boolean equalApproximately(PVector p1, PVector p2) {
 
 boolean inBox(PVector point, PVector[] line) {
 	/*print("Starting in box", point);
-	\println(line );
-	\println("y >= min", point.y, min(line[0].y, line[1].y));*/
+	//println(line );
+	//println("y >= min", point.y, min(line[0].y, line[1].y));*/
 	if (point.y >= min(line[0].y, line[1].y)-0.00001) {
 		//println("y <=max", point.y, max(line[0].y, line[1].y));
 		if (point.y <= max(line[0].y, line[1].y)+0.00001) {
@@ -264,8 +264,8 @@ Shape collider(Poligon p1, Poligon p2) {
 			/*print("Calculating intersection of");
 			print(p1clone.getLine(i));
 			print(" and ");
-			\println(p2clone.getLine(e));
-			\println("found intersection:", tmp);*/
+			//println(p2clone.getLine(e));
+			//println("found intersection:", tmp);*/
 			if (tmp != null) {
 				if (!equalApproximately(p1clone.get(i), tmp) && !equalApproximately(p2clone.get(e), tmp)) {
 					////println("intersection is not null");
@@ -300,13 +300,13 @@ Shape collider(Poligon p1, Poligon p2) {
 	}
 
 	/*println("p1clone with intersections", p1clone);
-	\println("p2clone with intersections", p2clone);
+	//println("p2clone with intersections", p2clone);
 	
-	\println("== Creating intersection polygon");
+	//println("== Creating intersection polygon");
 	
-	\println("index", p1clone.indexOf(pointception));
+	//println("index", p1clone.indexOf(pointception));
 	
-	\println("pointception", pointception);*/
+	//println("pointception", pointception);*/
 	
 	if (pointception == null) {
 		if (pointInVectorial(p1clone.get(0), p2)) {
@@ -320,41 +320,41 @@ Shape collider(Poligon p1, Poligon p2) {
 		Collections.rotate(p1clone, -p1clone.indexOf(pointception));
 		Collections.rotate(p2clone, -p2clone.indexOf(pointception));
 			
-		\println("cicle");
+		//println("cicle");
 		do {
-//			\println("P1=",p1clone);
-//			\println("P2=",p2clone);
+//			//println("P1=",p1clone);
+//			//println("P2=",p2clone);
 			intersection.add(p1clone.get(0));
-			\println("adding", p1clone.get(0));
-			\println("considering", p1clone.get(1));
+			//println("adding", p1clone.get(0));
+			//println("considering", p1clone.get(1));
 			if (!pointInVectorial(p1clone.get(1), p2clone)) {
 				Poligon tmp = p1clone;
-				\println("does not contain 1");
+				//println("does not contain 1");
 				p1clone = p2clone;
 				p2clone = tmp;
 				
-				\println("index2", -p1clone.indexOf(p2clone.get(0)));
+				//println("index2", -p1clone.indexOf(p2clone.get(0)));
 				
 				Collections.rotate(p1clone, -p1clone.indexOf(p2clone.get(0)));
-				\println("switched polygon, now considering", p1clone.get(1));
+				//println("switched polygon, now considering", p1clone.get(1));
 				
 				if (!pointInVectorial(p1clone.get(1), p2clone)) {
-					\println("does not contain 2");
+					//println("does not contain 2");
 					PVector here = p1clone.get(0);
 					Collections.reverse(p1clone);
 					Collections.rotate(p1clone, -p1clone.indexOf(here));
 					
-					\println("reversed polygon, now considering", p1clone.get(1));
+					//println("reversed polygon, now considering", p1clone.get(1));
 				}
 			}
 			
-			\println("In", p1clone.size());
+			//println("In", p1clone.size());
 			Collections.rotate(p1clone, -1);
 			
-			\println("Intersection now contains",intersection);
+			//println("Intersection now contains",intersection);
 			//println("p1clone now contains",p1clone);
 			//println("testing: ",p1clone.get(0), "in", p2clone, p1clone.get(0), "not in", intersection);
-			\println( "results: ", pointInVectorial(p1clone.get(0), p2clone) , !intersection.contains(p1clone.get(0) ));
+			//println( "results: ", pointInVectorial(p1clone.get(0), p2clone) , !intersection.contains(p1clone.get(0) ));
 		}
 		while (pointInVectorial(p1clone.get(0), p2clone) && !intersection.contains(p1clone.get(0)));
 	}
@@ -377,4 +377,60 @@ Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 		(Poligon)spriteInSpace1,
 		(Poligon)spriteInSpace2
 	);
+}
+
+void adjustToSurface(Droppable p1, Drawable p2) {
+	float lerp = 1;
+	Droppable copy = p1.clone();
+	Shape collision = null;
+	PVector nextposition = PVector.add(
+		p1.position,
+		p1.speed
+	);
+	
+	do {
+		copy.position = PVector.lerp(
+			p1.position,
+			nextposition,
+			lerp
+		);
+		
+		collision = collider(copy, p2);
+		//println("position", copy.position,"area", area, "lerp", lerp, collision.get("intersection"));
+		
+		lerp /= 2;
+	}
+	while (collision.get("intersection").size() > 0 && lerp > 0.01);
+
+	if (collision.get("intersection").size() > 0) {
+		PVector preposition = copy.position;
+		lerp = 0.01;
+	
+		nextposition = PVector.add(
+			p1.position,
+			PVector.mult(
+				p1.speed,
+				-1
+			)
+		);
+
+
+		while (collision.get("intersection").getArea() > 0  && lerp <= 10) {
+			copy.position = PVector.lerp(
+				p1.position,
+				nextposition,
+				lerp
+			);
+		
+			collision = collider(copy, p2);
+	
+			lerp *= 2;
+		}
+		
+		if (collision.get("intersection").getArea() > 0) {
+			copy.position = preposition;
+		}
+	}
+	
+	p1.position = copy.position.get();
 }

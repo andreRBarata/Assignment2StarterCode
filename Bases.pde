@@ -378,3 +378,59 @@ Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 		(Poligon)spriteInSpace2
 	);
 }
+
+void adjustToSurface(Droppable p1, Drawable p2) {
+	float lerp = 1;
+	Droppable copy = p1.clone();
+	Shape collision = null;
+	PVector nextposition = PVector.add(
+		p1.position,
+		p1.speed
+	);
+	
+	do {
+		copy.position = PVector.lerp(
+			p1.position,
+			nextposition,
+			lerp
+		);
+		
+		collision = collider(copy, p2);
+		//println("position", copy.position,"area", area, "lerp", lerp, collision.get("intersection"));
+		
+		lerp /= 2;
+	}
+	while (collision.get("intersection").size() > 0 && lerp > 0.01);
+
+	if (collision.get("intersection").size() > 0) {
+		PVector preposition = copy.position;
+		lerp = 0.01;
+	
+		nextposition = PVector.add(
+			p1.position,
+			PVector.mult(
+				p1.speed,
+				-1
+			)
+		);
+
+
+		while (collision.get("intersection").getArea() > 0  && lerp <= 100) {
+			copy.position = PVector.lerp(
+				p1.position,
+				nextposition,
+				lerp
+			);
+		
+			collision = collider(copy, p2);
+	
+			lerp *= 2;
+		}
+		
+		if (collision.get("intersection").getArea() > 0) {
+			copy.position = preposition;
+		}
+	}
+	
+	p1.position = copy.position.get();
+}

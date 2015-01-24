@@ -100,13 +100,15 @@ class Player extends Droppable {
 		if (!colliding) {	
 			if (checkKey(keyBinds.get("up"))) {
 				spin += 0.035;
+				this.spinoffset += 0.035;
 			}
 			if (checkKey(keyBinds.get("down"))) {
 				spin -= 0.035;
+				this.spinoffset -= 0.035;
 			}
 		}
 		else {
-			if (checkKey(keyBinds.get("right"))) {
+			if (checkKey(keyBinds.get("right")) && speed.mag() < speedlimit) {
 				speed.x -= (cos(spinoffset)) * movementspeed;
 				speed.y -= (sin(spinoffset)) * movementspeed;
 			}

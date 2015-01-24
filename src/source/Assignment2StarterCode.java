@@ -25,7 +25,8 @@ public class Assignment2StarterCode extends PApplet {
 */
 
 
-boolean devMode = false;
+boolean devMode = true;
+boolean start = false;
 
 float gravity;
 float planetScale;
@@ -33,12 +34,17 @@ float hillsize;
 float spinradius;
 float movementspeed;
 float minimapscale;
+float speedlimit;
 
 Drawable map;
 
 ArrayList<Player> players;
 ArrayList<Button> buttons;
 boolean[] keys = new boolean[526];
+
+public boolean sketchFullScreen() {
+	return !devMode;
+}
 
 public void setup() {
 	players = new ArrayList<Player>();
@@ -56,12 +62,14 @@ public void setup() {
 	spinradius = 1000;
 	movementspeed = 10;
 	minimapscale = 60;
+	speedlimit = 20;
 	
 	Poligons();
 	createMap();
 	//map.sprite = triangle.roundRotate(PI).scale(110);
 	background(255);
 	setUpPlayerControllers();
+	textAlign(CENTER,CENTER);
 }
 
 public void draw() {
@@ -70,69 +78,111 @@ public void draw() {
 	((Shape)players.get(0).sprite).updateOutline();
 	println(collider(players.get(0),map));*/
 	
-	PVector avgPlayer = new PVector();
-	
 	background(51);
 	
-	for (Player player: players) {
-		avgPlayer.add(player.position);
-	}
+	if (!start) {
+		ArrayList<Button> menubuttons =
+			new ArrayList<Button>();
 	
-	avgPlayer.div(players.size());
-	//Game map processing		
-	pushMatrix();
-		float angle = -(HALF_PI + atan2(
-				avgPlayer.y, avgPlayer.x
+		fill(255);
+	
+		rect(
+			20,20,
+			width - 40,
+			height - 40,
+			20
+		);
+		
+		fill(0);
+		textSize(32);
+		
+		text(
+			"Welcome to Asteroid Racer",
+			width/2, 80
+		);
+		
+		menubuttons.add(
+			new Button(
+				new PVector(width/2, height - 80),
+				"Start Game",
+				rectangle
+					.scale(
+						new PVector(10, 2.5f)
+					),
+				new CallBack() {
+					public void run() {
+						start = true;
+					}
+				}
 			)
 		);
-		translate(
-			width/2, -(avgPlayer.y/cos(angle)) + height/2
-		);
-		rotate(
-			angle
+		
+		menubuttons.add(
+			new Button(
+				new PVector(width/2, height - 80),
+				"Start Game",
+				rectangle
+					.scale(
+						new PVector(10, 2.5f)
+					),
+				new CallBack() {
+					public void run() {
+						start = true;
+					}
+				}
+			)
 		);
 		
-		stroke(0);
-		fill(255);
-		map.display();
-		
-		for(Player player: players) {
-			player.update();
-			player.display();
+		if (buttons != menubuttons) {
+			buttons = menubuttons;
 		}
-		
-	popMatrix();
 	
-	
-	fill(0);
-	
-	for (int i = 0; i < buttons.size(); i++) {
-		stroke(0);
-		Button button = buttons.get(i);
-		button.display();
+		for (int i = 0; i < buttons.size(); i++) {
+			Button button = buttons.get(i);
+			button.display();
+		}
 	}
+	else {
+		PVector avgPlayer = new PVector();
 	
-	hud(avgPlayer);
+		
+	
+		for (Player player: players) {
+			avgPlayer.add(player.position);
+		}
+	
+		avgPlayer.div(players.size());
+		//Game map processing		
+		pushMatrix();
+			float angle = -(HALF_PI + atan2(
+					avgPlayer.y, avgPlayer.x
+				)
+			);
+			translate(
+				width/2, -(avgPlayer.y/cos(angle)) + height/2
+			);
+			rotate(
+				angle
+			);
+		
+			stroke(0);
+			fill(255);
+			map.display();
+		
+			for(Player player: players) {
+				player.update();
+				player.display();
+			}
+		
+		popMatrix();
+	
+		hud(avgPlayer);
+	
+	}
 }
 
 public void hud(PVector avgPlayer) {
 	Drawable minimap = (Drawable)map.clone();
-
-	for (Player player: players) {
-		PVector location = minimap
-			.position
-			.get();
-		
-		location = PVector.sub(
-			location,
-			PVector.mult(
-				player.position,
-				minimapscale/planetScale
-			)
-		);
-			
-		ellipse(location.x, location.y, 10, 10);
-	}
 	
 	fill(255);
 	stroke(0);
@@ -146,11 +196,29 @@ public void hud(PVector avgPlayer) {
 		.scale(minimapscale/planetScale);
 
 	minimap.position = new PVector(
-		width - (minimapscale + 20),
-		(minimapscale + 20)
+		width - (minimapscale + 30),
+		(minimapscale + 30)
 	);
 	
 	minimap.display();
+	
+	for (Player player: players) {
+		PVector location = minimap
+			.position
+			.get();
+		
+		location = PVector.sub(
+			minimap.position,
+			PVector.mult(
+				player.position,
+				minimapscale/planetScale
+			)
+		);
+		
+		fill(player.colour);
+			
+		ellipse(location.x, location.y, 10, 10);
+	}
 }
 
 public void createMap() {
@@ -686,6 +754,62 @@ public Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 		(Poligon)spriteInSpace2
 	);
 }
+
+public void adjustToSurface(Droppable p1, Drawable p2) {
+	float lerp = 1;
+	Droppable copy = p1.clone();
+	Shape collision = null;
+	PVector nextposition = PVector.add(
+		p1.position,
+		p1.speed
+	);
+	
+	do {
+		copy.position = PVector.lerp(
+			p1.position,
+			nextposition,
+			lerp
+		);
+		
+		collision = collider(copy, p2);
+		//println("position", copy.position,"area", area, "lerp", lerp, collision.get("intersection"));
+		
+		lerp /= 2;
+	}
+	while (collision.get("intersection").size() > 0 && lerp > 0.01f);
+
+	if (collision.get("intersection").size() > 0) {
+		PVector preposition = copy.position;
+		lerp = 0.01f;
+	
+		nextposition = PVector.add(
+			p1.position,
+			PVector.mult(
+				p1.speed,
+				-1
+			)
+		);
+
+
+		while (collision.get("intersection").getArea() > 0  && lerp <= 100) {
+			copy.position = PVector.lerp(
+				p1.position,
+				nextposition,
+				lerp
+			);
+		
+			collision = collider(copy, p2);
+	
+			lerp *= 2;
+		}
+		
+		if (collision.get("intersection").getArea() > 0) {
+			copy.position = preposition;
+		}
+	}
+	
+	p1.position = copy.position.get();
+}
 /*
 	Button button = new Button(
 		new PVector(width/2, height/2),
@@ -720,22 +844,22 @@ class Button extends Drawable {
 		this.text = text;
 	}
 	
-	public void draw() {
-		fill(color(255));
-
-		super.display();
-		
+	public void display() {
 		if (!clicked) {
-			fill(color(0));
+			fill(color(255));
 		}
 		else {
 			fill(color(20,20,200));
 		}
+
+		super.display();
+		
+		fill(0);
 		
 		text(
 			text,
-			position.x + this.sprite.getRadius()/2 - textWidth(text)/2,
-			position.y + (this.sprite.getRadius()/2 + 10)
+			position.x,
+			position.y
 		);
 	}
 }
@@ -796,46 +920,21 @@ class Droppable extends Drawable {
 		if (this.sprite instanceof Shape) {
 			((Shape)this.sprite).updateOutline();
 		}
-	
-		Shape collision = collider(this, map);
-		float area = collision
-			.get("intersection")
-			.getArea();
-		//Droppable sink avoidence
-		float lerp = 1;
 		Droppable copy = this.clone();
-		PVector nextposition = PVector.add(
+		Shape collision = null;
+		
+		/*println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));*/
+		
+		adjustToSurface(this, map);
+		
+		copy.position = PVector.add(
 			this.position,
 			this.speed
 		);
 		
-		do {
-			copy.position = PVector.lerp(
-				this.position,
-				nextposition,
-				lerp
-			);
-			
-			collision = collider(copy, map);
-			
-			area = collision
-				.get("intersection")
-				.getArea();
-				
-			//println("position", copy.position,"area", area, "lerp", lerp, collision.get("intersection"));
-			
-			lerp /= 2;
-		}
-		while (collision.get("intersection").size() > 0 && lerp > 0.01f);
-		
-		println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));
-		
-		this.position = copy.position.get();
-		copy.position = nextposition.get();
-		
 		collision = collider(copy, map);
 		
-		if (collision.get("intersection").size() > 2) {
+		if (collision.get("intersection").getArea() > 1) {
 			float magnitude = speed.mag()/1.5f;
 			
 			Vectorial spriteInSpace = copy
@@ -859,7 +958,6 @@ class Droppable extends Drawable {
 				)
 			);
 			
-			this.spin *= 0.5f;
 			
 			println("area",collision.get("intersection").getArea());
 			
@@ -892,18 +990,18 @@ class Droppable extends Drawable {
 		this.sprite = this.sprite.rotate(
 			spin
 		);
+		this.spin *= 0.5f;
 		
-		if (!devMode) {
-			this.speed.x -= sin(
-				HALF_PI + atan2(copy.position.y, copy.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
-	
-			this.speed.y += cos(
-				HALF_PI + atan2(copy.position.y, copy.position.x) -
-					atan2(map.position.y, map.position.x)
-			) * (gravity/frameRate);
-		}
+
+		this.speed.x -= sin(
+			HALF_PI + atan2(copy.position.y, copy.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
+
+		this.speed.y += cos(
+			HALF_PI + atan2(copy.position.y, copy.position.x) -
+				atan2(map.position.y, map.position.x)
+		) * (gravity/frameRate);
 		
 		this.spinoffset = (this.spinoffset + this.spin) % TWO_PI;
 	}
@@ -1010,13 +1108,15 @@ class Player extends Droppable {
 		if (!colliding) {	
 			if (checkKey(keyBinds.get("up"))) {
 				spin += 0.035f;
+				this.spinoffset += 0.035f;
 			}
 			if (checkKey(keyBinds.get("down"))) {
 				spin -= 0.035f;
+				this.spinoffset -= 0.035f;
 			}
 		}
 		else {
-			if (checkKey(keyBinds.get("right"))) {
+			if (checkKey(keyBinds.get("right")) && speed.mag() < speedlimit) {
 				speed.x -= (cos(spinoffset)) * movementspeed;
 				speed.y -= (sin(spinoffset)) * movementspeed;
 			}

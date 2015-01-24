@@ -48,7 +48,7 @@ class Player extends Droppable {
 						.scale(
 							new PVector(3,1)
 						)
-			)*
+			)
 		);
 		this.keyBinds = new TreeMap<String, Character>();
 	}
@@ -100,9 +100,11 @@ class Player extends Droppable {
 		if (!colliding) {	
 			if (checkKey(keyBinds.get("up"))) {
 				spin += 0.035;
+				this.spinoffset += 0.035;
 			}
 			if (checkKey(keyBinds.get("down"))) {
 				spin -= 0.035;
+				this.spinoffset -= 0.035;
 			}
 		}
 		else {
