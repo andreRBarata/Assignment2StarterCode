@@ -2,6 +2,8 @@ class Player extends Droppable {
 	TreeMap<String, Character> keyBinds;
 	int index;
 	color colour;
+	float pathtraveled;
+	char[] name;
 		
 	Player() {
 		super(
@@ -18,39 +20,36 @@ class Player extends Droppable {
 					)
 				)
 				.add("windows",
-					triangle
+					trapezium
 						.transpose(
 							new PVector(0,10)
-						)
-						.merge(
-							triangle
-								.roundRotate(PI)
-								.transpose(
-									new PVector(10,10)
-								)
-						)
-						.merge(
-							triangle
-								.roundRotate(PI)
-								.transpose(
-									new PVector(-10,10)
-								)
 						)
 						.scale(
 							new PVector(1,0.6)
 						)
+						
 			)
 			.add(
-				"body", rectangle
+				"body", trapezium
+						.merge(
+							triangle
+								.transpose(
+									new PVector(20,0)
+								)
+						)
 						.transpose(
-							new PVector(0,-10)
+							new PVector(-5,-10)
 						)
 						.scale(
-							new PVector(3,1)
+							new PVector(1.8,1)
 						)
 			)
+		
 		);
+		
 		this.keyBinds = new TreeMap<String, Character>();
+		this.pathtraveled = 0;
+		this.name = "AAA".toCharArray();
 	}
 	
 	Player(int index, color colour) {
@@ -97,22 +96,36 @@ class Player extends Droppable {
 	}
 	
 	void update() {
-		if (!colliding) {	
+		float startAngle;
+		float endAngle;
+		
+		if (!isColliding) {	
 			if (checkKey(keyBinds.get("up"))) {
-				spin += 0.035;
-				this.spinoffset += 0.035;
+				spin += 0.15;
 			}
-			if (checkKey(keyBinds.get("down"))) {
-				spin -= 0.035;
-				this.spinoffset -= 0.035;
+			else if (checkKey(keyBinds.get("down"))) {
+				spin -= 0.15;
+			}
+			else if (spin != 0) {
+				spin -= 0.15 * (abs(spin) / spin);
 			}
 		}
 		else {
-			if (checkKey(keyBinds.get("right")) && speed.mag() < speedlimit) {
-				speed.x -= (cos(spinoffset)) * movementspeed;
-				speed.y -= (sin(spinoffset)) * movementspeed;
-			}
+			spin=0;
 		}
+		
+		
+		
+		if (checkKey(keyBinds.get("right")) && isColliding) {
+			speed.x += (cos(PI - spinoffset)) * movementspeed;
+			speed.y += (sin(PI - spinoffset)) * movementspeed;
+		}
+		
+		if (checkKey(keyBinds.get("left")) && isColliding) {
+			speed.x -= (cos(PI - spinoffset)) * movementspeed;
+			speed.y -= (sin(PI - spinoffset)) * movementspeed;
+		}
+		
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
 		}
@@ -123,6 +136,38 @@ class Player extends Droppable {
 			println("Player " + index + " button 2");
 		}
 		
-		super.update();    
+		startAngle = (
+			 - HALF_PI + atan2(
+				this.position.y,
+				this.position.x
+			)
+		);
+		
+		startAngle = (
+			startAngle > 0 ?
+				startAngle :
+				(TWO_PI + startAngle)
+		);
+			
+		super.update();
+		
+		endAngle = (
+			- HALF_PI + atan2(
+				this.position.y,
+				this.position.x
+			)
+		);
+		
+		endAngle = (
+			endAngle > 0 ?
+				 endAngle :
+				 (TWO_PI + endAngle)
+		);
+		
+		if (abs(endAngle - startAngle) < PI) {
+			pathtraveled += endAngle - startAngle;
+		}
+		
+		//println("angles", endAngle, startAngle);
 	}
 }

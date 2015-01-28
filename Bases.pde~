@@ -20,6 +20,30 @@ interface Vectorial {
 	public Vectorial scale(PVector val);
 }
 
+PVector gravity(Droppable p, Drawable m) {
+	return new PVector(
+		- sin(
+			HALF_PI + atan2(
+				p.position.y - m.position.y,
+				p.position.x - m.position.x
+			)
+		) * (gravity/frameRate),
+		- cos(
+			HALF_PI + atan2(
+				p.position.y - m.position.y,
+				p.position.x - m.position.x
+			)
+		) * (gravity/frameRate)
+	);
+}
+
+PVector yToProcessing(PVector point) {
+	return new PVector(
+		point.x,
+		-point.y
+	);
+}
+
 boolean isNull(Object o1, Object o2) {
 	return (o1 == null || o2 == null);
 }
@@ -225,11 +249,11 @@ Shape collider(Drawable p1, Drawable p2) {
 		
 		
 	if (spriteInSpace1 instanceof Shape) {
-		spriteInSpace1 = ((Shape)spriteInSpace1).outline.clone();
+		spriteInSpace1 = ((Shape)spriteInSpace1).getOutline();
 	}
 	
 	if (spriteInSpace2 instanceof Shape) {
-		spriteInSpace2 = ((Shape)spriteInSpace2).outline.clone();
+		spriteInSpace2 = ((Shape)spriteInSpace2).getOutline();
 	}
 	
 	spriteInSpace1 = spriteInSpace1.transpose(p1.position);
@@ -243,120 +267,67 @@ Shape collider(Drawable p1, Drawable p2) {
 
 Shape collider(Poligon p1, Poligon p2) {
 	Shape toReturn = new Shape();
-	Poligon p1clone = p1.clone();
-	Poligon p2clone = p2.clone();
 	Poligon intersection = new Poligon();
-	PVector pointception = null;
+	Polygon l1 = new Polygon();
+	Polygon l2 = new Polygon();
+	Area a1;
+	Area a2;
+	PathIterator pi;
 	
-	//////print("Calculating intersection between");
-	//////print(p1clone);
-	//////print(" and ");
-	////println(p2clone);
+	for (PVector point: p1) {
+		l1.addPoint(
+			(int)(point.x * 10000),
+			(int)(point.y * 10000)
+		);
+	}
 	
-	////println("== Adding intersections to polygons");
-	for (int i = 0; i < p1clone.count(); i++) {
-		for (int e = 0; e < p2clone.count(); e++) {
-			////println("Cycle: i=", i, "e=", e);
+	for (PVector point: p2) {
+		l2.addPoint(
+			(int)(point.x * 10000),
+			(int)(point.y * 10000)
+		);
+	}
+	
+	a1 = new Area(l1);
+	a2 = new Area(l2);
+	
+	a1.intersect(a2);
+	
+	pi = a1.getPathIterator(new AffineTransform());
+	
+	while (!pi.isDone()) {
+		float[] coords = new float[2];
+		
+		pi.currentSegment(coords);
+		intersection.add(new PVector(coords[0]/10000, coords[1]/10000));
+		pi.next();
+	}
+	
+	for (int i = 0; i < p1.count(); i++) {
+		for (int e = 0; e < p2.count(); e++) {
 			PVector tmp = intersectionInline(
-				p1clone.getLine(i),
-				p2clone.getLine(e)
+				p1.getLine(i),
+				p2.getLine(e)
 			);
-			/*print("Calculating intersection of");
-			print(p1clone.getLine(i));
-			print(" and ");
-			//println(p2clone.getLine(e));
-			//println("found intersection:", tmp);*/
+
 			if (tmp != null) {
-				if (!equalApproximately(p1clone.get(i), tmp) && !equalApproximately(p2clone.get(e), tmp)) {
-					////println("intersection is not null");
-					pointception = tmp;
-					toReturn.put("obj1_line",
-						new Poligon(
-							p1clone.getLine(i)
-						)
-					);
-					toReturn.put("obj2_line",
-						new Poligon(
-							p2clone.getLine(e)
-						)
-					);
-					////println("testing p1clone: ", p1clone, "does not contain", pointception);
-					if (!p1clone.contains(pointception)) {
-						////println("testing p1clone: ", p1clone.get(i), "is not equal to", pointception);
-						////println("adding ",pointception, "to p1clone:", p1clone);
-						p1clone.add(i + 1, pointception);
-					}
-				
-					////println("testing p2clone: ", p2clone, "does not contain", pointception);
-					if (!p2clone.contains(pointception)) {
-						////println("testing p2clone: ", p2clone.get(e), "is not equal to", pointception);
-						////println("adding ",pointception, "to p2clone:", p2clone);
-						p2clone.add(e + 1, pointception);
+				if (!equalApproximately(p1.get(i), tmp)) {
+					if (!equalApproximately(p2.get(e), tmp)) {
+						toReturn.put("obj1_line",
+							new Poligon(
+								p1.getLine(i)
+							)
+						);
+						toReturn.put("obj2_line",
+							new Poligon(
+								p2.getLine(e)
+							)
+						);
 					}
 				}
 			}
 
 		}
-	}
-
-	/*println("p1clone with intersections", p1clone);
-	//println("p2clone with intersections", p2clone);
-	
-	//println("== Creating intersection polygon");
-	
-	//println("index", p1clone.indexOf(pointception));
-	
-	//println("pointception", pointception);*/
-	
-	if (pointception == null) {
-		if (pointInVectorial(p1clone.get(0), p2)) {
-			intersection = p1.clone();
-		}
-		else if (pointInVectorial(p2clone.get(0), p1)) {
-			intersection = p2.clone();
-		}
-	}
-	else {
-		Collections.rotate(p1clone, -p1clone.indexOf(pointception));
-		Collections.rotate(p2clone, -p2clone.indexOf(pointception));
-			
-		//println("cicle");
-		do {
-//			//println("P1=",p1clone);
-//			//println("P2=",p2clone);
-			intersection.add(p1clone.get(0));
-			//println("adding", p1clone.get(0));
-			//println("considering", p1clone.get(1));
-			if (!pointInVectorial(p1clone.get(1), p2clone)) {
-				Poligon tmp = p1clone;
-				//println("does not contain 1");
-				p1clone = p2clone;
-				p2clone = tmp;
-				
-				//println("index2", -p1clone.indexOf(p2clone.get(0)));
-				
-				Collections.rotate(p1clone, -p1clone.indexOf(p2clone.get(0)));
-				//println("switched polygon, now considering", p1clone.get(1));
-				
-				if (!pointInVectorial(p1clone.get(1), p2clone)) {
-					//println("does not contain 2");
-					PVector here = p1clone.get(0);
-					Collections.reverse(p1clone);
-					Collections.rotate(p1clone, -p1clone.indexOf(here));
-					
-					//println("reversed polygon, now considering", p1clone.get(1));
-				}
-			}
-			
-			//println("In", p1clone.size());
-			Collections.rotate(p1clone, -1);
-			
-			//println("Intersection now contains",intersection);
-			//println("p1clone now contains",p1clone);
-			//println("testing: ",p1clone.get(0), "in", p2clone, p1clone.get(0), "not in", intersection);
-			//println( "results: ", pointInVectorial(p1clone.get(0), p2clone) , !intersection.contains(p1clone.get(0) ));
-		}
-		while (pointInVectorial(p1clone.get(0), p2clone) && !intersection.contains(p1clone.get(0)));
 	}
 	
 	toReturn.put("intersection", intersection);
@@ -366,11 +337,11 @@ Shape collider(Poligon p1, Poligon p2) {
 
 Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 	if (spriteInSpace1 instanceof Shape) {
-		spriteInSpace1 = ((Shape)spriteInSpace1).outline.clone();
+		spriteInSpace1 = ((Shape)spriteInSpace1).getOutline();
 	}
 	
 	if (spriteInSpace2 instanceof Shape) {
-		spriteInSpace2 = ((Shape)spriteInSpace2).outline.clone();
+		spriteInSpace2 = ((Shape)spriteInSpace2).getOutline();
 	}
 
 	return collider(
@@ -379,13 +350,52 @@ Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 	);
 }
 
+void rotateToSurface(Droppable p, Drawable m) {
+	Shape collision = collider(p, m);
+	float factor = 1;
+	float oldrotation = new Float(p.spinoffset);
+	float nextrotation = lineAngle(
+		collision
+			.get("obj2_line")
+			.toArray(new PVector[2]),
+		new PVector[] {
+			new PVector(0,0),
+			new PVector(1,0)
+		}
+	);
+	
+	println("while starting");
+	while (collision.get("intersection").getArea() > 20 && factor > 0.0001) {
+		Droppable copy = p.clone();
+		
+		copy.sprite = copy.sprite.rotate(
+			(nextrotation - copy.spinoffset) * factor
+		);
+		copy.spinoffset += (nextrotation - copy.spinoffset) * factor;
+		
+		collision = collider(copy, m);
+		
+		factor /= 2;
+	}
+	println("new angle", nextrotation * (factor * 2), factor);
+	//if (factor > 0.0001) {
+		p.sprite = p.sprite.rotate(
+			 (nextrotation - copy.spinoffset) * (factor * 2)
+		);
+		p.spinoffset += (nextrotation - copy.spinoffset) * (factor * 2);
+	//}
+}
+
 void adjustToSurface(Droppable p1, Drawable p2) {
 	float lerp = 1;
 	Droppable copy = p1.clone();
 	Shape collision = null;
 	PVector nextposition = PVector.add(
 		p1.position,
-		p1.speed
+		PVector.mult(
+			yToProcessing(p1.speed),
+			1 / frameRate
+		)
 	);
 	
 	do {
@@ -400,22 +410,20 @@ void adjustToSurface(Droppable p1, Drawable p2) {
 		
 		lerp /= 2;
 	}
-	while (collision.get("intersection").size() > 0 && lerp > 0.01);
+	while (collision.get("intersection").getArea() > 20 && lerp > 0.01);
 
-	if (collision.get("intersection").size() > 0) {
+	if (collision.get("intersection").getArea() > 40) {
 		PVector preposition = copy.position;
-		lerp = 0.01;
+		lerp = 0.001;
 	
-		nextposition = PVector.add(
+		nextposition = PVector.lerp(
+			p2.position,
 			p1.position,
-			PVector.mult(
-				p1.speed,
-				-1
-			)
+			2
 		);
 
 
-		while (collision.get("intersection").getArea() > 0  && lerp <= 10) {
+		while (collision.get("intersection").getArea() > 40 && lerp <= 1) {
 			copy.position = PVector.lerp(
 				p1.position,
 				nextposition,
@@ -427,7 +435,7 @@ void adjustToSurface(Droppable p1, Drawable p2) {
 			lerp *= 2;
 		}
 		
-		if (collision.get("intersection").getArea() > 0) {
+		if (collision.get("intersection").getArea() > 40) {
 			copy.position = preposition;
 		}
 	}

@@ -1,6 +1,7 @@
 Poligon rectangle;
 Poligon triangle;
 Poligon circle;
+Poligon trapezium;
 
 void Poligons() {
 	rectangle = new Poligon(
@@ -21,7 +22,7 @@ void Poligons() {
 	);
 	
 	float theta = 0;
-	float thetaInc = TWO_PI / 9;
+	float thetaInc = TWO_PI / 10;
 	circle = new Poligon();
 	while (theta < TWO_PI) {
 		circle.add(
@@ -33,4 +34,23 @@ void Poligons() {
 		
 		theta += thetaInc;
 	}
+	
+	trapezium = triangle
+			.transpose(
+				new PVector(0,0)
+			)
+			.merge(
+				triangle
+					.roundRotate(PI)
+					.transpose(
+						new PVector(10,0)
+					)
+			)
+			.merge(
+				triangle
+					.roundRotate(PI)
+					.transpose(
+						new PVector(-10,0)
+					)
+			);
 }

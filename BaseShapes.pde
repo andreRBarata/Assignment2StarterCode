@@ -1,8 +1,9 @@
 Poligon rectangle;
 Poligon triangle;
 Poligon circle;
+Poligon trapezium;
 
-void Poligons() {
+void poligons() {
 	rectangle = new Poligon(
 		new PVector[] {
 			new PVector(-10,-10),
@@ -33,4 +34,23 @@ void Poligons() {
 		
 		theta += thetaInc;
 	}
+	
+	trapezium = triangle
+			.transpose(
+				new PVector(0,0)
+			)
+			.merge(
+				triangle
+					.roundRotate(PI)
+					.transpose(
+						new PVector(10,0)
+					)
+			)
+			.merge(
+				triangle
+					.roundRotate(PI)
+					.transpose(
+						new PVector(-10,0)
+					)
+			);
 }

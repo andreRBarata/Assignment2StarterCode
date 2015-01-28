@@ -1,6 +1,6 @@
 class Droppable extends Drawable {
 	PVector speed;
-	boolean colliding;
+	boolean isColliding;
 	float spin;
 	float spinoffset;
 	float momentum;
@@ -8,7 +8,7 @@ class Droppable extends Drawable {
 	Droppable(PVector position, Vectorial sprite) {
 		super(position, sprite);
 		this.speed = new PVector(0,0);
-		this.colliding = false;
+		this.isColliding = false;
 		this.spin = 0;
 		this.spinoffset = 0;
 		this.momentum = 0;
@@ -21,7 +21,7 @@ class Droppable extends Drawable {
 		);
 		
 		clone.speed = this.speed.get();
-		clone.colliding = new Boolean(this.colliding);
+		clone.isColliding = new Boolean(this.isColliding);
 		clone.spin = new Float(this.spin);
 		clone.spinoffset = new Float(this.spinoffset);
 		clone.momentum = new Float(this.momentum);
@@ -30,92 +30,123 @@ class Droppable extends Drawable {
 	}
 	
 	void update() {
-		if (this.sprite instanceof Shape) {
-			((Shape)this.sprite).updateOutline();
-		}
 		Droppable copy = this.clone();
 		Shape collision = null;
+		PVector force = new PVector();
 		
-		/*println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));*/
+		collision = collider(this, map);
 		
-		adjustToSurface(this, map);
 		
-		copy.position = PVector.add(
-			this.position,
-			this.speed
-		);
-		
-		collision = collider(copy, map);
-		
-		if (collision.get("intersection").size() > 2) {
-			float magnitude = speed.mag()/1.5;
+		if (collision.get("intersection").getArea() == 0) {
+			isColliding = false;
+			force.add(gravity(this, map));
 			
-			Vectorial spriteInSpace = copy
-				.sprite
-				.transpose(
-					position
-				);
-				
-			PVector transfer = PVector.sub(
-					spriteInSpace.center(),
-					collision
-						.get("intersection")
-						.center()
-				).cross(this.speed);
-			
-			this.spin -= (
-				(
-					transfer.mag()/(
-						TWO_PI * spriteInSpace.getRadius() * spinradius
-					)
-				)
+			//Angle from spin
+			this.sprite = this.sprite.rotate(
+				this.spin / frameRate
 			);
+	
+			this.spinoffset = (
+				TWO_PI + this.spinoffset + (this.spin / frameRate)
+			) % TWO_PI;
+		}
+		else {
+			float magnitude = this.speed.mag();
 			
+			magnitude /= 1.5;
+			//magnitude--;
+		
+			if (magnitude < 1) {
+				magnitude = 0;
+			}
 			
-			println("area",collision.get("intersection").getArea());
+			println("Magnitude recalculated", magnitude);
 			
-			if (collision.get("obj2_line") != null) {
-				this.speed = PVector.fromAngle(
-					PI - lineAngle(
+			if (collision.get("intersection").getArea() > 20) {
+				Vectorial spriteInSpace = this
+					.sprite
+					.transpose(
+						position
+					);
+				PVector transfer = PVector.sub(
+						spriteInSpace.center(),
+						collision
+							.get("intersection")
+							.center()
+					).cross(this.speed);
+				
+			
+				PVector speedTransfer = transfer.get();
+				//speedTransfer.setMag(transfer.mag()/1000);
+
+				/*this.speed.sub(
+					speedTransfer
+				);*/
+			
+				if (collision.get("obj2_line") != null) {
+					float angle = HALF_PI - lineAngle(
 						new PVector[] {
-							PVector.sub(position, speed),
-							copy.position
+							PVector.sub(
+								yToProcessing(this.position),
+								this.speed
+							),
+							yToProcessing(this.position)
 						},
 						collision
 							.get("obj2_line")
 							.toArray(new PVector[2])
-					)
-				);
-			}
-			else {
-				//This is not supposed to happen
-				this.speed = new PVector(0,0);
-			}
-			
-			this.speed.mult(magnitude);
-			
-			colliding = true;
-		}
-		else {
-			colliding = false;	
-		}
+					);
+				
+					rotateToSurface(this, map);
+					
+					/*if (abs(angle) < 0.1) {
+						magnitude /= 1.1;
+					}
+					else {
+						magnitude /= 2;
+					}*/
+					
+					println("speed recalculated");
+					this.speed = (
+						PVector.fromAngle(
+							angle + lineAngle(
+								new PVector[] {
+									new PVector(0,0),
+									new PVector(1,0)
+								},
+								collision
+									.get("obj2_line")
+									.toArray(new PVector[2])
+							)
+						)
+					);
 		
-		this.sprite = this.sprite.rotate(
-			spin
-		);
-		this.spin *= 0.5;
-		
+					println("angles: ", angle);
 
-		this.speed.x -= sin(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
-
-		this.speed.y += cos(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
+			
+				}
+				else {
+					//This is not supposed to happen
+					this.speed = new PVector(0,0);
+				}
+			}
+			isColliding = true;
+			
+			this.speed.setMag(magnitude);
+		}
 		
-		this.spinoffset = (this.spinoffset + this.spin) % TWO_PI;
+		//Velocity from force
+		this.speed.add(force);
+		
+		//Position from speed
+		adjustToSurface(this, map);
+		/*this.position.add(
+			PVector.mult(
+				yToProcessing(this.speed),
+				1 / frameRate
+			)
+		);*/
+		
+		
 	}
 }

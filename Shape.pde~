@@ -1,10 +1,6 @@
 class Shape extends TreeMap<String,Poligon> implements Vectorial {
-	Poligon outline;
-
 	Shape clone() {
 		Shape shape = new Shape();
-		
-		shape.outline = outline.clone();
 		
 		for (String key: this.keySet()) {
 			shape.put(
@@ -30,10 +26,6 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		}
 		
 		return composite.center();
-	}
-	
-	void updateOutline() {
-		this.outline = getOutline();
 	}
 	
 	boolean contains(Object point) {
@@ -91,25 +83,58 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	Poligon getOutline() {
+		Polygon l1 = new Polygon();
+		Polygon l2 = new Polygon();
+		Area a1;
+		Area a2;
+		PathIterator pi;
+	
 		String[] keys = this
 			.keySet()
 			.toArray(
 				new String[this.size()]
 			);
 		Poligon outline = null;
-		
+	
+		for (PVector point: this.get(keys[i])) {
+			l1.addPoint(
+				(int)(point.x * 10000),
+				(int)(point.y * 10000)
+			);
+		}
+	
+		a1 = new Area(l1);
+	
 		if (this.size() >= 1) {
 			outline = this.get(keys[0]).clone();
 		}
-		
+	
 		if (this.size() > 1) {
 			for (int i = 1; i < keys.length; i++) {
-				outline = outline.union(this.get(keys[i]).clone());
+				for (PVector point: this.get(keys[i])) {
+					l2.addPoint(
+						(int)(point.x * 10000),
+						(int)(point.y * 10000)
+					);
+				}
+			
+				a2 = new Area(l2);
+			
+				a1.add(a2);
 			}
-		}
 		
-		print("outline");
-		println(outline);
+			pi = a1.getPathIterator(null);
+			outline = new Poligon();
+		
+			while (!pi.isDone()) {
+				float[] coords = new float[2];
+	
+				pi.currentSegment(coords);
+				outline.add(new PVector(coords[0]/10000, coords[1]/10000));
+				pi.next();
+			}
+		}	
+	
 		return outline;
 	}
 	

@@ -98,72 +98,41 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	
 	Poligon union(Poligon union) {
 		Poligon poligon = new Poligon();
-		Poligon ori1 = this.clone();
-		Poligon ori2 = union.clone();
-		
-		PVector coords = ori1.get(0);
-		
-		//println("before", ori1, ori2);
-		
-		for (int i = 0; i < ori1.count(); i++) {
-			for (int e = 0; e < ori2.count(); e++) {
-				PVector tmp = intersectionInline(
-					ori1.getLine(i),
-					ori2.getLine(e)
-				);
-				//print("lines");
-				//print(ori1.getLine(i));
-				//println(ori2.getLine(e));
-				if (tmp != null) {
-					coords = tmp;
-					//println("tmp", tmp);
-					if (!ori1.containsApproximately(coords)) {
-						if (!equalApproximately(ori1.get(i), coords)) {
-							//println("tmp2", coords);
-							ori1.add(i + 1, coords);
-						}
-					}
-			
-					if (!ori2.containsApproximately(coords)) {
-						if (!equalApproximately(ori2.get(e), coords)) {
-							ori2.add(e + 1, coords);
-						}
-					}
-				}
-			}
+		Polygon l1 = new Polygon();
+		Polygon l2 = new Polygon();
+		Area a1;
+		Area a2;
+		PathIterator pi;
+	
+		for (PVector point: this) {
+			l1.addPoint(
+				(int)(point.x * 10000),
+				(int)(point.y * 10000)
+			);
 		}
-		
-		Collections.rotate(ori1, -ori1.indexOf(coords));
-		
-		/*print("poligons");
-		print(ori1);
-		println(ori2);*/
-		
-		do {
-			poligon.add(ori1.get(0));
-			println("adding", ori1.get(0));
-			if (ori2.contains(ori1.get(0))) {
-				Poligon tmp = ori1;
-				
-				ori1 = ori2;
-				ori2 = tmp;
-				println("switched");
-				
-				Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
-				
-				if (pointInVectorial(ori1.get(1), ori2)) {
-					Collections.reverse(ori1);
-					println("reversed");
-					
-					Collections.rotate(ori1, -ori1.indexOf(ori2.get(0)));
-				}
-			}
-			
-			Collections.rotate(ori1, -1);
+	
+		for (PVector point: union) {
+			l2.addPoint(
+				(int)(point.x * 10000),
+				(int)(point.y * 10000)
+			);
 		}
-		while (!poligon.contains(ori1.get(0)));
+	
+		a1 = new Area(l1);
+		a2 = new Area(l2);
+	
+		a1.add(a2);
+	
+		pi = a1.getPathIterator(null);
+	
+		while (!pi.isDone()) {
+			float[] coords = new float[2];
 		
-		println("poligon", poligon);
+			pi.currentSegment(coords);
+			poligon.add(new PVector(coords[0]/10000, coords[1]/10000));
+			pi.next();
+		}	
+		
 		return poligon;
 	}
 	

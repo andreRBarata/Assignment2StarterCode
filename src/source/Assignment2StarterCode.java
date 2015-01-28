@@ -4,6 +4,8 @@ import processing.event.*;
 import processing.opengl.*; 
 
 import java.util.*; 
+import java.awt.*; 
+import java.awt.geom.*; 
 
 import java.util.HashMap; 
 import java.util.ArrayList; 
@@ -25,8 +27,11 @@ public class Assignment2StarterCode extends PApplet {
 */
 
 
+
+
 boolean devMode = true;
 boolean start = false;
+boolean multiplayer = false;
 
 float gravity;
 float planetScale;
@@ -36,12 +41,15 @@ float movementspeed;
 float minimapscale;
 float speedlimit;
 
+int timer;
+int startMilis;
+
 Drawable map;
 
 ArrayList<Player> players;
 ArrayList<Button> buttons;
 boolean[] keys = new boolean[526];
-
+boolean written = false;
 public boolean sketchFullScreen() {
 	return !devMode;
 }
@@ -56,15 +64,16 @@ public void setup() {
 		size(displayWidth, displayHeight);
 	}
 
-	gravity = 8;
+	gravity = 900;
 	planetScale = 1100;
 	hillsize = 550;
 	spinradius = 1000;
-	movementspeed = 10;
+	movementspeed = 100;
 	minimapscale = 60;
-	speedlimit = 20;
+	speedlimit = 50;
+	timer = 0;
 	
-	Poligons();
+	poligons();
 	createMap();
 	//map.sprite = triangle.roundRotate(PI).scale(110);
 	background(255);
@@ -81,74 +90,14 @@ public void draw() {
 	background(51);
 	
 	if (!start) {
-		ArrayList<Button> menubuttons =
-			new ArrayList<Button>();
-	
-		fill(255);
-	
-		rect(
-			20,20,
-			width - 40,
-			height - 40,
-			20
-		);
-		
-		fill(0);
-		textSize(32);
-		
-		text(
-			"Welcome to Asteroid Racer",
-			width/2, 80
-		);
-		
-		menubuttons.add(
-			new Button(
-				new PVector(width/2, height - 80),
-				"Start Game",
-				rectangle
-					.scale(
-						new PVector(10, 2.5f)
-					),
-				new CallBack() {
-					public void run() {
-						start = true;
-					}
-				}
-			)
-		);
-		
-		menubuttons.add(
-			new Button(
-				new PVector(width/2, height - 80),
-				"Start Game",
-				rectangle
-					.scale(
-						new PVector(10, 2.5f)
-					),
-				new CallBack() {
-					public void run() {
-						start = true;
-					}
-				}
-			)
-		);
-		
-		if (buttons != menubuttons) {
-			buttons = menubuttons;
-		}
-	
-		for (int i = 0; i < buttons.size(); i++) {
-			Button button = buttons.get(i);
-			button.display();
-		}
+		startMessage();
 	}
 	else {
 		PVector avgPlayer = new PVector();
 	
-		
-	
 		for (Player player: players) {
 			avgPlayer.add(player.position);
+			println(((Shape)player.sprite).getOutline());
 		}
 	
 		avgPlayer.div(players.size());
@@ -177,7 +126,11 @@ public void draw() {
 		popMatrix();
 	
 		hud(avgPlayer);
+	}
 	
+	for (int i = 0; i < buttons.size(); i++) {
+		Button button = buttons.get(i);
+		button.display();
 	}
 }
 
@@ -187,11 +140,18 @@ public void hud(PVector avgPlayer) {
 	fill(255);
 	stroke(0);
 	
+	if (!multiplayer) {
+		text(timer,
+			width/2,
+			40
+		);
+	}
+	
+	
 	minimap.sprite = minimap
 		.sprite
 		.rotate(
-			PI - (atan2(avgPlayer.y, avgPlayer.x) -
-				atan2(map.position.y, map.position.x)) + HALF_PI
+			PI
 		)
 		.scale(minimapscale/planetScale);
 
@@ -215,9 +175,248 @@ public void hud(PVector avgPlayer) {
 			)
 		);
 		
-		fill(player.colour);
+		if (!multiplayer) {
+			text(
+				((int)(player.pathtraveled / TWO_PI * 100)) + "%",
+				width/3,
+				40
+			);
 			
+			text(
+				"Speed: " + player.speed.mag(),
+				100,50
+			);
+			
+			text(
+				"Angle: " + player.spinoffset,
+				100,100
+			);
+			
+			text(
+				"Altitude: " + (PVector.dist(player.position, new PVector(0,0)) / TWO_PI) * 360,
+				100,150
+			);
+			
+			text(
+				"isColliding: " + player.isColliding,
+				100,200
+			);
+		}
+
+		fill(player.colour);
+		
 		ellipse(location.x, location.y, 10, 10);
+		
+		if (player.pathtraveled > TWO_PI) {
+			gameOver(player);
+		}
+		else {
+			if (!multiplayer) {
+				timer = (millis() - startMilis)/1000;
+			}
+		}
+	}
+}
+
+public void startMessage() {
+	ArrayList<Button> menubuttons =
+		new ArrayList<Button>();
+
+	fill(255);
+
+	rect(
+		20,20,
+		width - 40,
+		height - 40,
+		20
+	);
+	
+	fill(0);
+	textSize(32);
+	
+	text(
+		"Welcome to Asteroid Racer",
+		width/2, 80
+	);
+	
+	for (Player player: players) {
+		int playerNum = players.indexOf(player) + 1;
+		
+		
+		textSize(25);
+	
+		if (checkKey(player.keyBinds.get("right"))) {
+			int i = 0;
+			
+			while (i < 3 && player.name[i] == 'Z') {
+				i++;
+			}
+			
+			if (i < 3) {
+				player.name[i]++;
+			}
+			else {
+				player.name = "AAA".toCharArray();
+			}
+		}
+		if (checkKey(player.keyBinds.get("left"))) {
+			int i = 0;
+			
+			while (i < 3 && player.name[i] == 'A') {
+				i++;
+			}
+			
+			if (i < 3) {
+				player.name[i]--;
+			}
+			else {
+				player.name = "ZZZ".toCharArray();
+			}
+		}
+	
+		text("Set name of player "
+			+ playerNum
+			+ ": "
+			+ String.valueOf(player.name),
+			width/2, height/(players.size() + 1) * playerNum
+		);
+	}
+	menubuttons.add(
+		new Button(
+			new PVector(width/2, height - 80),
+			"Start Game",
+			rectangle
+				.scale(
+					new PVector(10, 2.5f)
+				),
+			new CallBack() {
+				public void run() {
+					start = true;
+					buttons = new ArrayList<Button>();
+					startMilis = millis();
+				}
+			}
+		)
+	);
+	
+	if (buttons != menubuttons) {
+		buttons = menubuttons;
+	}
+}
+
+public void gameOver(Player player) {
+	ArrayList<Button> menubuttons =
+			new ArrayList<Button>();
+	String[] file = loadStrings("scores.txt");
+	ArrayList<String> data;
+	
+	fill(255);
+
+	rect(
+		20,20,
+		width - 40,
+		height - 40,
+		20
+	);
+	
+	fill(0);
+	textSize(32);
+	
+	text(
+		"Congratulations, you won the game",
+		width/2, 80
+	);
+	
+	textSize(25);
+	
+	text(
+		"I am as suprised as you are! " + String.valueOf(player.name),
+		width/2, 120
+	);
+	
+	text(
+		"It only took you " + timer + " seconds",
+		width/2, 145
+	);
+	
+	if (file != null) {
+		int i;
+		
+		data = new ArrayList<String>(
+			Arrays.asList(file)
+		);
+		
+		i = data.size() - 1;
+		
+		if (data.size() >= 1) {
+			int score = Integer.valueOf(
+				split(data.get(i), ",")[0]
+			);
+		
+			while (i > 0 && score > timer) {
+				i--;
+				String[] line = split(data.get(i), ",");
+				score = Integer.valueOf(line[0]);		
+			}
+		}
+		else {
+			i = 0;
+		}
+		
+		data.add(i,
+			String.valueOf(timer) + "," +
+			String.valueOf(player.name)
+		);
+		
+		for (String line: data) {
+			text(
+				line.replace(",", ": "),
+				width/2,
+				200 + 30 * data.indexOf(line)
+			);
+		}
+	}
+	else {
+		data = new ArrayList<String>();
+		
+		data.add(
+			String.valueOf(timer) + "," +
+			String.valueOf(player.name)
+		);
+	}
+	
+	if (!written) {
+		saveStrings("scores.txt", 
+			data
+				.subList(0,min(10, data.size()))
+				.toArray(new String[min(10, data.size())])
+		);
+		
+		written = true;
+	}
+
+	player.speed = new PVector(0,0);
+	
+	
+	menubuttons.add(
+		new Button(
+			new PVector(width/2, height - 80),
+			"Go again",
+			rectangle
+				.scale(
+					new PVector(10, 2.5f)
+				),
+			new CallBack() {
+				public void run() {
+					start = false;
+					setup();
+				}
+			}
+		)
+	);
+	
+	if (buttons != menubuttons) {
+		buttons = menubuttons;
 	}
 }
 
@@ -225,8 +424,8 @@ public void createMap() {
 	Poligon poligon = new Poligon();
 	PVector point = new PVector(0,0);
 	float theta = 0;
-	float thetaInc = TWO_PI / 350;
-	float noiseScale = 0.0029f;
+	float thetaInc = TWO_PI / 100;
+	float noiseScale = 0.0039f;
 	int start = 0;
 
 	while (theta < TWO_PI) {
@@ -314,6 +513,14 @@ public void setUpPlayerControllers() {
 		int x = width/2 - (i + 1) * gap;
 		p.position.x = x;
 		p.position.y = planetScale + hillsize + 100;
+		
+		p.pathtraveled = -(
+			- HALF_PI + atan2(
+				p.position.y,
+				p.position.x
+			)
+		);
+		
 		players.add(p);
 	}
 }
@@ -341,8 +548,9 @@ public void mouseReleased() {
 Poligon rectangle;
 Poligon triangle;
 Poligon circle;
+Poligon trapezium;
 
-public void Poligons() {
+public void poligons() {
 	rectangle = new Poligon(
 		new PVector[] {
 			new PVector(-10,-10),
@@ -373,6 +581,25 @@ public void Poligons() {
 		
 		theta += thetaInc;
 	}
+	
+	trapezium = triangle
+			.transpose(
+				new PVector(0,0)
+			)
+			.merge(
+				triangle
+					.roundRotate(PI)
+					.transpose(
+						new PVector(10,0)
+					)
+			)
+			.merge(
+				triangle
+					.roundRotate(PI)
+					.transpose(
+						new PVector(-10,0)
+					)
+			);
 }
 interface CallBack {
 	public void run();
@@ -394,6 +621,30 @@ interface Vectorial {
 	public Vectorial rotate(float degrees);
 	public Vectorial scale(float val);
 	public Vectorial scale(PVector val);
+}
+
+public PVector gravity(Droppable p, Drawable m) {
+	return new PVector(
+		- sin(
+			HALF_PI + atan2(
+				p.position.y - m.position.y,
+				p.position.x - m.position.x
+			)
+		) * (gravity/frameRate),
+		- cos(
+			HALF_PI + atan2(
+				p.position.y - m.position.y,
+				p.position.x - m.position.x
+			)
+		) * (gravity/frameRate)
+	);
+}
+
+public PVector yToProcessing(PVector point) {
+	return new PVector(
+		point.x,
+		-point.y
+	);
 }
 
 public boolean isNull(Object o1, Object o2) {
@@ -601,11 +852,11 @@ public Shape collider(Drawable p1, Drawable p2) {
 		
 		
 	if (spriteInSpace1 instanceof Shape) {
-		spriteInSpace1 = ((Shape)spriteInSpace1).outline.clone();
+		spriteInSpace1 = ((Shape)spriteInSpace1).getOutline();
 	}
 	
 	if (spriteInSpace2 instanceof Shape) {
-		spriteInSpace2 = ((Shape)spriteInSpace2).outline.clone();
+		spriteInSpace2 = ((Shape)spriteInSpace2).getOutline();
 	}
 	
 	spriteInSpace1 = spriteInSpace1.transpose(p1.position);
@@ -619,120 +870,67 @@ public Shape collider(Drawable p1, Drawable p2) {
 
 public Shape collider(Poligon p1, Poligon p2) {
 	Shape toReturn = new Shape();
-	Poligon p1clone = p1.clone();
-	Poligon p2clone = p2.clone();
 	Poligon intersection = new Poligon();
-	PVector pointception = null;
+	Polygon l1 = new Polygon();
+	Polygon l2 = new Polygon();
+	Area a1;
+	Area a2;
+	PathIterator pi;
 	
-	//////print("Calculating intersection between");
-	//////print(p1clone);
-	//////print(" and ");
-	////println(p2clone);
+	for (PVector point: p1) {
+		l1.addPoint(
+			(int)(point.x * 10000),
+			(int)(point.y * 10000)
+		);
+	}
 	
-	////println("== Adding intersections to polygons");
-	for (int i = 0; i < p1clone.count(); i++) {
-		for (int e = 0; e < p2clone.count(); e++) {
-			////println("Cycle: i=", i, "e=", e);
+	for (PVector point: p2) {
+		l2.addPoint(
+			(int)(point.x * 10000),
+			(int)(point.y * 10000)
+		);
+	}
+	
+	a1 = new Area(l1);
+	a2 = new Area(l2);
+	
+	a1.intersect(a2);
+	
+	pi = a1.getPathIterator(new AffineTransform());
+	
+	while (!pi.isDone()) {
+		float[] coords = new float[2];
+		
+		pi.currentSegment(coords);
+		intersection.add(new PVector(coords[0]/10000, coords[1]/10000));
+		pi.next();
+	}
+	
+	for (int i = 0; i < p1.count(); i++) {
+		for (int e = 0; e < p2.count(); e++) {
 			PVector tmp = intersectionInline(
-				p1clone.getLine(i),
-				p2clone.getLine(e)
+				p1.getLine(i),
+				p2.getLine(e)
 			);
-			/*print("Calculating intersection of");
-			print(p1clone.getLine(i));
-			print(" and ");
-			//println(p2clone.getLine(e));
-			//println("found intersection:", tmp);*/
+
 			if (tmp != null) {
-				if (!equalApproximately(p1clone.get(i), tmp) && !equalApproximately(p2clone.get(e), tmp)) {
-					////println("intersection is not null");
-					pointception = tmp;
-					toReturn.put("obj1_line",
-						new Poligon(
-							p1clone.getLine(i)
-						)
-					);
-					toReturn.put("obj2_line",
-						new Poligon(
-							p2clone.getLine(e)
-						)
-					);
-					////println("testing p1clone: ", p1clone, "does not contain", pointception);
-					if (!p1clone.contains(pointception)) {
-						////println("testing p1clone: ", p1clone.get(i), "is not equal to", pointception);
-						////println("adding ",pointception, "to p1clone:", p1clone);
-						p1clone.add(i + 1, pointception);
-					}
-				
-					////println("testing p2clone: ", p2clone, "does not contain", pointception);
-					if (!p2clone.contains(pointception)) {
-						////println("testing p2clone: ", p2clone.get(e), "is not equal to", pointception);
-						////println("adding ",pointception, "to p2clone:", p2clone);
-						p2clone.add(e + 1, pointception);
+				if (!equalApproximately(p1.get(i), tmp)) {
+					if (!equalApproximately(p2.get(e), tmp)) {
+						toReturn.put("obj1_line",
+							new Poligon(
+								p1.getLine(i)
+							)
+						);
+						toReturn.put("obj2_line",
+							new Poligon(
+								p2.getLine(e)
+							)
+						);
 					}
 				}
 			}
 
 		}
-	}
-
-	/*println("p1clone with intersections", p1clone);
-	//println("p2clone with intersections", p2clone);
-	
-	//println("== Creating intersection polygon");
-	
-	//println("index", p1clone.indexOf(pointception));
-	
-	//println("pointception", pointception);*/
-	
-	if (pointception == null) {
-		if (pointInVectorial(p1clone.get(0), p2)) {
-			intersection = p1.clone();
-		}
-		else if (pointInVectorial(p2clone.get(0), p1)) {
-			intersection = p2.clone();
-		}
-	}
-	else {
-		Collections.rotate(p1clone, -p1clone.indexOf(pointception));
-		Collections.rotate(p2clone, -p2clone.indexOf(pointception));
-			
-		//println("cicle");
-		do {
-//			//println("P1=",p1clone);
-//			//println("P2=",p2clone);
-			intersection.add(p1clone.get(0));
-			//println("adding", p1clone.get(0));
-			//println("considering", p1clone.get(1));
-			if (!pointInVectorial(p1clone.get(1), p2clone)) {
-				Poligon tmp = p1clone;
-				//println("does not contain 1");
-				p1clone = p2clone;
-				p2clone = tmp;
-				
-				//println("index2", -p1clone.indexOf(p2clone.get(0)));
-				
-				Collections.rotate(p1clone, -p1clone.indexOf(p2clone.get(0)));
-				//println("switched polygon, now considering", p1clone.get(1));
-				
-				if (!pointInVectorial(p1clone.get(1), p2clone)) {
-					//println("does not contain 2");
-					PVector here = p1clone.get(0);
-					Collections.reverse(p1clone);
-					Collections.rotate(p1clone, -p1clone.indexOf(here));
-					
-					//println("reversed polygon, now considering", p1clone.get(1));
-				}
-			}
-			
-			//println("In", p1clone.size());
-			Collections.rotate(p1clone, -1);
-			
-			//println("Intersection now contains",intersection);
-			//println("p1clone now contains",p1clone);
-			//println("testing: ",p1clone.get(0), "in", p2clone, p1clone.get(0), "not in", intersection);
-			//println( "results: ", pointInVectorial(p1clone.get(0), p2clone) , !intersection.contains(p1clone.get(0) ));
-		}
-		while (pointInVectorial(p1clone.get(0), p2clone) && !intersection.contains(p1clone.get(0)));
 	}
 	
 	toReturn.put("intersection", intersection);
@@ -742,11 +940,11 @@ public Shape collider(Poligon p1, Poligon p2) {
 
 public Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 	if (spriteInSpace1 instanceof Shape) {
-		spriteInSpace1 = ((Shape)spriteInSpace1).outline.clone();
+		spriteInSpace1 = ((Shape)spriteInSpace1).getOutline();
 	}
 	
 	if (spriteInSpace2 instanceof Shape) {
-		spriteInSpace2 = ((Shape)spriteInSpace2).outline.clone();
+		spriteInSpace2 = ((Shape)spriteInSpace2).getOutline();
 	}
 
 	return collider(
@@ -755,13 +953,52 @@ public Shape collider(Vectorial spriteInSpace1, Vectorial spriteInSpace2) {
 	);
 }
 
+public void rotateToSurface(Droppable p, Drawable m) {
+	Shape collision = collider(p, m);
+	float factor = 1;
+	float oldrotation = new Float(p.spinoffset);
+	float nextrotation = lineAngle(
+		collision
+			.get("obj2_line")
+			.toArray(new PVector[2]),
+		new PVector[] {
+			new PVector(0,0),
+			new PVector(1,0)
+		}
+	);
+	
+	println("while starting");
+	while (collision.get("intersection").getArea() > 20 && factor > 0.0001f) {
+		Droppable copy = p.clone();
+		
+		copy.sprite = copy.sprite.rotate(
+			(nextrotation - copy.spinoffset) * factor
+		);
+		copy.spinoffset += (nextrotation - copy.spinoffset) * factor;
+		
+		collision = collider(copy, m);
+		
+		factor /= 2;
+	}
+	println("new angle", nextrotation * (factor * 2), factor);
+	//if (factor > 0.0001) {
+		p.sprite = p.sprite.rotate(
+			 (nextrotation - p.spinoffset) * (factor * 2)
+		);
+		p.spinoffset += (nextrotation - p.spinoffset) * (factor * 2);
+	//}
+}
+
 public void adjustToSurface(Droppable p1, Drawable p2) {
 	float lerp = 1;
 	Droppable copy = p1.clone();
 	Shape collision = null;
 	PVector nextposition = PVector.add(
 		p1.position,
-		p1.speed
+		PVector.mult(
+			yToProcessing(p1.speed),
+			1 / frameRate
+		)
 	);
 	
 	do {
@@ -776,22 +1013,20 @@ public void adjustToSurface(Droppable p1, Drawable p2) {
 		
 		lerp /= 2;
 	}
-	while (collision.get("intersection").size() > 0 && lerp > 0.01f);
+	while (collision.get("intersection").getArea() > 20 && lerp > 0.01f);
 
-	if (collision.get("intersection").size() > 0) {
+	if (collision.get("intersection").getArea() > 40) {
 		PVector preposition = copy.position;
-		lerp = 0.01f;
+		lerp = 0.001f;
 	
-		nextposition = PVector.add(
+		nextposition = PVector.lerp(
+			p2.position,
 			p1.position,
-			PVector.mult(
-				p1.speed,
-				-1
-			)
+			2
 		);
 
 
-		while (collision.get("intersection").getArea() > 0  && lerp <= 100) {
+		while (collision.get("intersection").getArea() > 40 && lerp <= 1) {
 			copy.position = PVector.lerp(
 				p1.position,
 				nextposition,
@@ -803,7 +1038,7 @@ public void adjustToSurface(Droppable p1, Drawable p2) {
 			lerp *= 2;
 		}
 		
-		if (collision.get("intersection").getArea() > 0) {
+		if (collision.get("intersection").getArea() > 40) {
 			copy.position = preposition;
 		}
 	}
@@ -887,7 +1122,7 @@ class Drawable {
 }
 class Droppable extends Drawable {
 	PVector speed;
-	boolean colliding;
+	boolean isColliding;
 	float spin;
 	float spinoffset;
 	float momentum;
@@ -895,7 +1130,7 @@ class Droppable extends Drawable {
 	Droppable(PVector position, Vectorial sprite) {
 		super(position, sprite);
 		this.speed = new PVector(0,0);
-		this.colliding = false;
+		this.isColliding = false;
 		this.spin = 0;
 		this.spinoffset = 0;
 		this.momentum = 0;
@@ -908,7 +1143,7 @@ class Droppable extends Drawable {
 		);
 		
 		clone.speed = this.speed.get();
-		clone.colliding = new Boolean(this.colliding);
+		clone.isColliding = new Boolean(this.isColliding);
 		clone.spin = new Float(this.spin);
 		clone.spinoffset = new Float(this.spinoffset);
 		clone.momentum = new Float(this.momentum);
@@ -917,99 +1152,132 @@ class Droppable extends Drawable {
 	}
 	
 	public void update() {
-		if (this.sprite instanceof Shape) {
-			((Shape)this.sprite).updateOutline();
-		}
 		Droppable copy = this.clone();
 		Shape collision = null;
+		PVector force = new PVector();
 		
-		/*println("position", this.position,"intersection P",collision.get("intersection") ,"speed", speed,"colliding", collision.get("obj2_line"));*/
+		collision = collider(this, map);
 		
-		adjustToSurface(this, map);
 		
-		copy.position = PVector.add(
-			this.position,
-			this.speed
-		);
-		
-		collision = collider(copy, map);
-		
-		if (collision.get("intersection").getArea() > 1) {
-			float magnitude = speed.mag()/1.5f;
+		if (collision.get("intersection").getArea() == 0) {
+			isColliding = false;
+			force.add(gravity(this, map));
 			
-			Vectorial spriteInSpace = copy
-				.sprite
-				.transpose(
-					position
-				);
-				
-			PVector transfer = PVector.sub(
-					spriteInSpace.center(),
-					collision
-						.get("intersection")
-						.center()
-				).cross(this.speed);
-			
-			this.spin -= (
-				(
-					transfer.mag()/(
-						TWO_PI * spriteInSpace.getRadius() * spinradius
-					)
-				)
+			//Angle from spin
+			this.sprite = this.sprite.rotate(
+				this.spin / frameRate
 			);
+	
+			this.spinoffset = (
+				TWO_PI + this.spinoffset + (this.spin / frameRate)
+			) % TWO_PI;
+		}
+		else {
+			float magnitude = this.speed.mag();
 			
+			magnitude /= 1.5f;
+			//magnitude--;
+		
+			if (magnitude < 1) {
+				magnitude = 0;
+			}
 			
-			println("area",collision.get("intersection").getArea());
+			println("Magnitude recalculated", magnitude);
 			
-			if (collision.get("obj2_line") != null) {
-				this.speed = PVector.fromAngle(
-					PI - lineAngle(
+			if (collision.get("intersection").getArea() > 20) {
+				Vectorial spriteInSpace = this
+					.sprite
+					.transpose(
+						position
+					);
+				PVector transfer = PVector.sub(
+						spriteInSpace.center(),
+						collision
+							.get("intersection")
+							.center()
+					).cross(this.speed);
+				
+			
+				PVector speedTransfer = transfer.get();
+				//speedTransfer.setMag(transfer.mag()/1000);
+
+				/*this.speed.sub(
+					speedTransfer
+				);*/
+			
+				if (collision.get("obj2_line") != null) {
+					float angle = HALF_PI - lineAngle(
 						new PVector[] {
-							PVector.sub(position, speed),
-							copy.position
+							PVector.sub(
+								yToProcessing(this.position),
+								this.speed
+							),
+							yToProcessing(this.position)
 						},
 						collision
 							.get("obj2_line")
 							.toArray(new PVector[2])
-					)
-				);
-			}
-			else {
-				//This is not supposed to happen
-				this.speed = new PVector(0,0);
-			}
-			
-			this.speed.mult(magnitude);
-			
-			colliding = true;
-		}
-		else {
-			colliding = false;	
-		}
+					);
+				
+					//rotateToSurface(this, map);
+					
+					/*if (abs(angle) < 0.1) {
+						magnitude /= 1.1;
+					}
+					else {
+						magnitude /= 2;
+					}*/
+					
+					println("speed recalculated");
+					this.speed = (
+						PVector.fromAngle(
+							angle + lineAngle(
+								new PVector[] {
+									new PVector(0,0),
+									new PVector(1,0)
+								},
+								collision
+									.get("obj2_line")
+									.toArray(new PVector[2])
+							)
+						)
+					);
 		
-		this.sprite = this.sprite.rotate(
-			spin
-		);
-		this.spin *= 0.5f;
-		
+					println("angles: ", angle);
 
-		this.speed.x -= sin(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
-
-		this.speed.y += cos(
-			HALF_PI + atan2(copy.position.y, copy.position.x) -
-				atan2(map.position.y, map.position.x)
-		) * (gravity/frameRate);
+			
+				}
+				else {
+					//This is not supposed to happen
+					this.speed = new PVector(0,0);
+				}
+			}
+			isColliding = true;
+			
+			this.speed.setMag(magnitude);
+		}
 		
-		this.spinoffset = (this.spinoffset + this.spin) % TWO_PI;
+		//Velocity from force
+		this.speed.add(force);
+		
+		//Position from speed
+		adjustToSurface(this, map);
+		/*this.position.add(
+			PVector.mult(
+				yToProcessing(this.speed),
+				1 / frameRate
+			)
+		);*/
+		
+		
 	}
 }
 class Player extends Droppable {
 	TreeMap<String, Character> keyBinds;
 	int index;
 	int colour;
+	float pathtraveled;
+	char[] name;
 		
 	Player() {
 		super(
@@ -1026,39 +1294,36 @@ class Player extends Droppable {
 					)
 				)
 				.add("windows",
-					triangle
+					trapezium
 						.transpose(
 							new PVector(0,10)
-						)
-						.merge(
-							triangle
-								.roundRotate(PI)
-								.transpose(
-									new PVector(10,10)
-								)
-						)
-						.merge(
-							triangle
-								.roundRotate(PI)
-								.transpose(
-									new PVector(-10,10)
-								)
 						)
 						.scale(
 							new PVector(1,0.6f)
 						)
+						
 			)
 			.add(
-				"body", rectangle
+				"body", trapezium
+						.merge(
+							triangle
+								.transpose(
+									new PVector(20,0)
+								)
+						)
 						.transpose(
-							new PVector(0,-10)
+							new PVector(-5,-10)
 						)
 						.scale(
-							new PVector(3,1)
+							new PVector(1.8f,1)
 						)
 			)
+		
 		);
+		
 		this.keyBinds = new TreeMap<String, Character>();
+		this.pathtraveled = 0;
+		this.name = "AAA".toCharArray();
 	}
 	
 	Player(int index, int colour) {
@@ -1105,22 +1370,36 @@ class Player extends Droppable {
 	}
 	
 	public void update() {
-		if (!colliding) {	
+		float startAngle;
+		float endAngle;
+		
+		if (!isColliding) {	
 			if (checkKey(keyBinds.get("up"))) {
-				spin += 0.035f;
-				this.spinoffset += 0.035f;
+				spin += 0.15f;
 			}
-			if (checkKey(keyBinds.get("down"))) {
-				spin -= 0.035f;
-				this.spinoffset -= 0.035f;
+			else if (checkKey(keyBinds.get("down"))) {
+				spin -= 0.15f;
+			}
+			else if (spin != 0) {
+				spin -= 0.15f * (abs(spin) / spin);
 			}
 		}
 		else {
-			if (checkKey(keyBinds.get("right")) && speed.mag() < speedlimit) {
-				speed.x -= (cos(spinoffset)) * movementspeed;
-				speed.y -= (sin(spinoffset)) * movementspeed;
-			}
+			spin=0;
 		}
+		
+		
+		
+		if (checkKey(keyBinds.get("right")) && isColliding) {
+			speed.x += (cos(PI - spinoffset)) * movementspeed;
+			speed.y += (sin(PI - spinoffset)) * movementspeed;
+		}
+		
+		if (checkKey(keyBinds.get("left")) && isColliding) {
+			speed.x -= (cos(PI - spinoffset)) * movementspeed;
+			speed.y -= (sin(PI - spinoffset)) * movementspeed;
+		}
+		
 		if (checkKey(keyBinds.get("start"))) {
 			println("Player " + index + " start");
 		}
@@ -1131,7 +1410,39 @@ class Player extends Droppable {
 			println("Player " + index + " button 2");
 		}
 		
-		super.update();    
+		startAngle = (
+			 - HALF_PI + atan2(
+				this.position.y,
+				this.position.x
+			)
+		);
+		
+		startAngle = (
+			startAngle > 0 ?
+				startAngle :
+				(TWO_PI + startAngle)
+		);
+			
+		super.update();
+		
+		endAngle = (
+			- HALF_PI + atan2(
+				this.position.y,
+				this.position.x
+			)
+		);
+		
+		endAngle = (
+			endAngle > 0 ?
+				 endAngle :
+				 (TWO_PI + endAngle)
+		);
+		
+		if (abs(endAngle - startAngle) < PI) {
+			pathtraveled += endAngle - startAngle;
+		}
+		
+		//println("angles", endAngle, startAngle);
 	}
 }
 class Poligon extends ArrayList<PVector> implements Vectorial {
@@ -1449,12 +1760,8 @@ class Poligon extends ArrayList<PVector> implements Vectorial {
 	}
 }
 class Shape extends TreeMap<String,Poligon> implements Vectorial {
-	Poligon outline;
-
 	public Shape clone() {
 		Shape shape = new Shape();
-		
-		shape.outline = outline.clone();
 		
 		for (String key: this.keySet()) {
 			shape.put(
@@ -1480,10 +1787,6 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 		}
 		
 		return composite.center();
-	}
-	
-	public void updateOutline() {
-		this.outline = getOutline();
 	}
 	
 	public boolean contains(Object point) {
@@ -1541,25 +1844,58 @@ class Shape extends TreeMap<String,Poligon> implements Vectorial {
 	}
 	
 	public Poligon getOutline() {
+		Polygon l1 = new Polygon();
+		Polygon l2 = new Polygon();
+		Area a1;
+		Area a2;
+		PathIterator pi;
+	
 		String[] keys = this
 			.keySet()
 			.toArray(
 				new String[this.size()]
 			);
 		Poligon outline = null;
-		
+	
+		for (PVector point: this.get(keys[0])) {
+			l1.addPoint(
+				(int)(point.x * 10000),
+				(int)(point.y * 10000)
+			);
+		}
+	
+		a1 = new Area(l1);
+	
 		if (this.size() >= 1) {
 			outline = this.get(keys[0]).clone();
 		}
-		
+	
 		if (this.size() > 1) {
 			for (int i = 1; i < keys.length; i++) {
-				outline = outline.union(this.get(keys[i]).clone());
+				for (PVector point: this.get(keys[i])) {
+					l2.addPoint(
+						(int)(point.x * 10000),
+						(int)(point.y * 10000)
+					);
+				}
+			
+				a2 = new Area(l2);
+			
+				a1.add(a2);
 			}
-		}
 		
-		/*print("outline");
-		println(outline);*/
+			pi = a1.getPathIterator(null);
+			outline = new Poligon();
+		
+			while (!pi.isDone()) {
+				float[] coords = new float[2];
+	
+				pi.currentSegment(coords);
+				outline.add(new PVector(coords[0]/10000, coords[1]/10000));
+				pi.next();
+			}
+		}	
+	
 		return outline;
 	}
 	
