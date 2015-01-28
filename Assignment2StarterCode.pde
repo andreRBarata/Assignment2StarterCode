@@ -9,7 +9,7 @@ import java.util.*;
 import java.awt.*;
 import java.awt.geom.*;
 
-boolean devMode = true;
+boolean devMode = false;
 boolean start = false;
 boolean multiplayer = false;
 
@@ -77,7 +77,7 @@ void draw() {
 	
 		for (Player player: players) {
 			avgPlayer.add(player.position);
-			println(((Shape)player.sprite).getOutline());
+			//println(((Shape)player.sprite).getOutline());
 		}
 	
 		avgPlayer.div(players.size());

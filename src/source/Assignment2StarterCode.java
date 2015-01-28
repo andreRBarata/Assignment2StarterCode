@@ -29,7 +29,7 @@ public class Assignment2StarterCode extends PApplet {
 
 
 
-boolean devMode = true;
+boolean devMode = false;
 boolean start = false;
 boolean multiplayer = false;
 
@@ -97,7 +97,7 @@ public void draw() {
 	
 		for (Player player: players) {
 			avgPlayer.add(player.position);
-			println(((Shape)player.sprite).getOutline());
+			//println(((Shape)player.sprite).getOutline());
 		}
 	
 		avgPlayer.div(players.size());

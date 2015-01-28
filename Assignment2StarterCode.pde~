@@ -77,7 +77,7 @@ void draw() {
 	
 		for (Player player: players) {
 			avgPlayer.add(player.position);
-			println(((Shape)player.sprite).getOutline());
+			//println(((Shape)player.sprite).getOutline());
 		}
 	
 		avgPlayer.div(players.size());
@@ -334,7 +334,7 @@ void gameOver(Player player) {
 				split(data.get(i), ",")[0]
 			);
 		
-			while (i > 0 && score < timer) {
+			while (i > 0 && score > timer) {
 				i--;
 				String[] line = split(data.get(i), ",");
 				score = Integer.valueOf(line[0]);		
