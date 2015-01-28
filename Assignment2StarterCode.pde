@@ -48,9 +48,9 @@ void setup() {
 	planetScale = 1100;
 	hillsize = 550;
 	spinradius = 1000;
-	movementspeed = 100;
+	movementspeed = 150;
 	minimapscale = 60;
-	speedlimit = 50;
+	speedlimit = 500;
 	timer = 0;
 	
 	poligons();
@@ -161,26 +161,27 @@ void hud(PVector avgPlayer) {
 				width/3,
 				40
 			);
+			if (devMode) {
+				text(
+					"Speed: " + player.speed.mag(),
+					100,50
+				);
 			
-			text(
-				"Speed: " + player.speed.mag(),
-				100,50
-			);
+				text(
+					"Angle: " + player.spinoffset,
+					100,100
+				);
 			
-			text(
-				"Angle: " + player.spinoffset,
-				100,100
-			);
+				text(
+					"Altitude: " + (PVector.dist(player.position, new PVector(0,0)) / TWO_PI) * 360,
+					100,150
+				);
 			
-			text(
-				"Altitude: " + (PVector.dist(player.position, new PVector(0,0)) / TWO_PI) * 360,
-				100,150
-			);
-			
-			text(
-				"isColliding: " + player.isColliding,
-				100,200
-			);
+				text(
+					"isColliding: " + player.isColliding,
+					100,200
+				);
+			}
 		}
 
 		fill(player.colour);
@@ -338,6 +339,8 @@ void gameOver(Player player) {
 				String[] line = split(data.get(i), ",");
 				score = Integer.valueOf(line[0]);		
 			}
+			
+			i++;
 		}
 		else {
 			i = 0;
